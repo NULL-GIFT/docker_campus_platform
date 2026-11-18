@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>系统操作日志</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --morandi-bg: #fdfcf8;
+      --morandi-text-main: #2d3748;
+      --morandi-text-sub: #718096;
+    }
+    body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; background-color: var(--morandi-bg); color: var(--morandi-text-main); }
+
+    /* 布局容器 */
+    .admin-layout-wrapper { display: flex; min-height: 100vh; width: 100%; }
+    .admin-main-content { flex: 1; overflow-y: auto; background-color: var(--morandi-bg); }
+
+    /* 内容卡片 */
+    .content-card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin: 30px; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid #f7fafc; padding-bottom: 15px; }
+    .page-title { font-size: 22px; font-weight: bold; color: #2d3748; margin: 0; }
+
+    /* 表格样式 */
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; padding: 15px; color: #718096; font-size: 14px; background: #f7fafc; border-bottom: 2px solid #edf2f7; }
+    td { padding: 15px; border-bottom: 1px solid #e2e8f0; color: #2d3748; font-size: 14px; }
+
+    /* 日志类型标签 */
+    .tag { padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+    .tag-login { background: #e6fffa; color: #38b2ac; } /* 蓝绿色 */
+    .tag-ban { background: #fff5f5; color: #e53e3e; }   /* 红色 */
+    .tag-unban { background: #f0fff4; color: #38a169; } /* 绿色 */
+  </style>
+</head>
+<body>
+
+<div class="admin-layout-wrapper">
+  <div th:replace="~{admin/sidebar :: sidebar('logs')}"></div>
+
+  <div class="admin-main-content">
+    <div class="content-card">
+      <div class="page-header">
+        <h2 class="page-title">
+          <i class="fa fa-list-alt" style="color: #667eea; margin-right: 10px;"></i>系统操作日志
+        </h2>
+        <span style="color: #718096; font-size: 14px;">共 <span th:text="${logList.size()}">0</span> 条记录</span>
+      </div>
+
+
+      <div class="filter-bar" style="margin-bottom: 20px;">
+        <form action="/admin/logs" method="get">
+          <select name="type" class="form-control" style="width: 200px;" onchange="this.form.submit()">
+            <option value="ALL">🗓️ 全部日志</option>
+            <option value="LOGIN" th:selected="${currentType == 'LOGIN'}">🔐 登录日志</option>
+            <option value="BAN" th:selected="${currentType == 'BAN'}">⛔ 封号记录</option>
+            <option value="UNBAN" th:selected="${currentType == 'UNBAN'}">✨ 解封记录</option>
+            <option value="ITEM_DELETE" th:selected="${currentType == 'ITEM_DELETE'}">🗑️ 商品删除</option>
+            <option value="TASK_DELETE" th:selected="${currentType == 'TASK_DELETE'}">❌ 任务删除</option>
+            <option value="NOTICE" th:selected="${currentType == 'NOTICE'}">📢 发布公告</option>
+          </select>
+        </form>
+      </div>
+      <table>
+        <thead>
+        <tr>
+          <th style="width: 80px;">ID</th>
+          <th style="width: 150px;">操作人</th>
+          <th style="width: 100px;">类型</th>
+          <th>操作详情</th>
+          <th style="width: 180px;">时间</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="log : ${logList}">
+          <td th:text="${log.id}">1</td>
+          <td>
+            <i class="fa fa-user-circle-o" style="color: #cbd5e0; margin-right: 5px;"></i>
+            <span th:text="${log.operatorName}">Admin</span>
+          </td>
+          <td>
+            <span th:if="${log.type == 'LOGIN'}" class="tag tag-login">登录</span>
+
+            <span th:if="${log.type == 'BAN'}" class="tag" style="background:#fed7d7; color:#c53030;">封号</span>
+            <span th:if="${log.type == 'UNBAN'}" class="tag" style="background:#c6f6d5; color:#2f855a;">解封</span>
+
+            <span th:if="${log.type == 'NOTICE'}" class="tag" style="background:#bee3f8; color:#2b6cb0;">发布公告</span>
+
+            <span th:if="${log.type == 'ITEM_DELETE'}" class="tag" style="background:#e9d8fd; color:#6b46c1;">下架商品</span>
+
+            <span th:if="${log.type == 'TASK_DELETE'}" class="tag" style="background:#fefcbf; color:#b7791f;">删除任务</span>
+          </td>
+          <td th:text="${log.content}">登录成功</td>
+          <td th:text="${#temporals.format(log.createTime, 'yyyy-MM-dd HH:mm:ss')}"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

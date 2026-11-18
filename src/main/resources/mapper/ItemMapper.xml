@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.campus_platform.mapper.ItemMapper">
+
+    <!-- 基础查询字段 -->
+    <sql id="baseColumns">
+        id, title, description, price, image_url, status, seller_id,
+        create_time, update_time, is_deleted
+    </sql>
+
+    <select id="selectPage" resultType="com.campus_platform.entity.Item">
+        SELECT <include refid="baseColumns" />
+        FROM item
+        WHERE is_deleted = 0
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="count" resultType="int">
+        SELECT COUNT(*) FROM item
+        WHERE is_deleted = 0  <!-- 只统计未删除的商品 -->
+    </select>
+
+
+    <!-- 查询我发布的商品（分页） -->
+    <select id="selectMyItems" resultType="com.campus_platform.entity.Item">
+        SELECT * FROM item
+        WHERE seller_id = #{userId}
+          AND is_deleted = 0
+        ORDER BY create_time DESC
+            LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <!-- 统计我发布的商品数量 -->
+    <select id="countMyItems" resultType="int">
+        SELECT COUNT(*) FROM item
+        WHERE seller_id = #{userId}
+          AND is_deleted = 0
+    </select>
+
+
+
+
+    <!-- 插入商品 -->
+    <insert id="insert" parameterType="com.campus_platform.entity.Item">
+        INSERT INTO item (
+            title, description, price, image_url, status, seller_id,
+            create_time, update_time, is_deleted
+        ) VALUES (
+                     #{title}, #{description}, #{price}, #{imageUrl}, #{status}, #{sellerId},
+                     #{createTime}, #{updateTime}, #{isDeleted}
+                 )
+    </insert>
+
+
+
+
+    <select id="selectByKeyword" resultType="com.campus_platform.entity.Item">
+        SELECT <include refid="baseColumns" />
+        FROM item
+        WHERE is_deleted = 0
+        AND (title LIKE CONCAT('%', #{keyword}, '%')
+        OR description LIKE CONCAT('%', #{keyword}, '%'))
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="countByKeyword" resultType="int">
+        SELECT COUNT(*) FROM item
+        WHERE is_deleted = 0
+          AND (title LIKE CONCAT('%', #{keyword}, '%')
+            OR description LIKE CONCAT('%', #{keyword}, '%'))
+    </select>
+
+
+    <!-- 搜索我发布的商品（带关键词） -->
+    <select id="selectMyItemsByKeyword" resultType="Item">
+        SELECT * FROM item
+        WHERE seller_id = #{userId}
+          AND is_deleted = 0
+          AND (title LIKE CONCAT('%', #{keyword}, '%') OR description LIKE CONCAT('%', #{keyword}, '%'))
+        ORDER BY create_time DESC
+            LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <!-- 统计我发布的商品数量（带关键词） -->
+    <select id="countMyItemsByKeyword" resultType="int">
+        SELECT COUNT(*) FROM item
+        WHERE seller_id = #{userId}
+          AND is_deleted = 0
+          AND (title LIKE CONCAT('%', #{keyword}, '%') OR description LIKE CONCAT('%', #{keyword}, '%'))
+    </select>
+
+
+
+
+
+    <!-- 根据ID查询商品 -->
+    <select id="selectById" parameterType="Long" resultType="com.campus_platform.entity.Item">
+        SELECT <include refid="baseColumns" />
+        FROM item
+        WHERE id = #{id}
+    </select>
+
+
+
+
+    <update id="updateStatus">
+        UPDATE item
+        SET status = #{status}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+
+    <update id="deleteById">
+        UPDATE item
+        SET is_deleted = 1, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+
+
+<!--管理员新增-->
+    <update id="deleteByAdmin">
+        UPDATE item
+        SET is_deleted = 1,
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+    <select id="adminFindAll" resultType="com.campus_platform.entity.Item">
+        SELECT * FROM item
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (title LIKE CONCAT('%', #{keyword}, '%') OR description LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="statusType != null">
+                <choose>
+                    <when test="statusType == 0"> AND status = 0 AND is_deleted = 0
+                    </when>
+                    <when test="statusType == 1"> AND status = 1 AND is_deleted = 0
+                    </when>
+                    <when test="statusType == 2"> AND is_deleted = 1
+                    </when>
+                </choose>
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+    <select id="countOnSale" resultType="int">
+        SELECT COUNT(*) FROM item WHERE status = 0 AND is_deleted = 0
+    </select>
+
+    <select id="countSold" resultType="int">
+        SELECT COUNT(*) FROM item WHERE status = 1 AND is_deleted = 0
+    </select>
+
+    <select id="countDeleted" resultType="int">
+        SELECT COUNT(*) FROM item WHERE is_deleted = 1
+    </select>
+
+</mapper>

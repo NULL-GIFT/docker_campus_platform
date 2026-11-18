@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>平台数据驾驶舱</title>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        :root {
+            --card-blue: #EEF7FF; --icon-blue: #7abafd;
+            --card-pink: #fff5f5; --icon-pink: #ff9a9e;
+            --card-green: #f0fff4; --icon-green: #81e6d9;
+        }
+
+        .stats-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-bottom: 35px; }
+
+        .stat-card {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            border: 1px solid #bdc3c7;
+            display: flex; align-items: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.05);
+        }
+
+        /* 装饰用的小横条 */
+        .stat-card::after {
+            content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 3px;
+        }
+        .card-user::after { background: var(--icon-blue); }
+        .card-money::after { background: var(--icon-pink); }
+        .card-task::after { background: var(--icon-green); }
+
+        /* 图标圆形容器 */
+        .icon-box {
+            width: 64px; height: 64px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 26px; margin-right: 20px;
+        }
+
+        .card-user .icon-box { background: var(--card-blue); color: var(--icon-blue); }
+        .card-money .icon-box { background: var(--card-pink); color: var(--icon-pink); }
+        .card-task .icon-box { background: var(--card-green); color: var(--icon-green); }
+
+        .stat-info h3 { margin: 0 0 8px 0; font-size: 14px; color: #4a5568; font-weight: 500; }
+        .stat-info .num { margin: 0; font-size: 32px; font-weight: 300; color: #1a202c; font-family: 'Optima', sans-serif; }
+
+        /* 图表容器 */
+        .chart-box {
+            background: white; padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            border: 1px solid #bdc3c7;
+            height: 420px;
+        }
+        .chart-header {
+            font-size: 18px; font-weight: bold; margin-bottom: 25px;
+            display: flex; align-items: center; color: #2d3748;
+        }
+        /* 标题前的装饰圆点 */
+        .chart-header::before {
+            content: ''; display: block; width: 10px; height: 10px;
+            background: #face94; /* 橙色系 */
+            border-radius: 50%; margin-right: 12px;
+            box-shadow: 0 0 0 4px rgba(250, 206, 148, 0.3);
+        }
+
+        .grid-wrapper { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; }
+
+        .page-title {
+            font-size: 24px; font-weight: 700; color: #2d3748; margin-bottom: 30px; letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="admin-layout">
+
+    <div th:replace="~{admin/sidebar :: sidebar('dashboard')}"></div>
+
+    <div class="admin-content">
+
+        <div class="page-title">Dashboard Overview</div>
+
+        <div class="stats-container">
+            <div class="stat-card card-user">
+                <div class="icon-box"><i class="fa fa-users"></i></div>
+                <div class="stat-info"><h3>总注册用户</h3><p class="num" th:text="${totalUsers}">0</p></div>
+            </div>
+            <div class="stat-card card-money">
+                <div class="icon-box"><i class="fa fa-cny"></i></div>
+                <div class="stat-info"><h3>平台流水</h3><p class="num" th:text="${totalAmount}">0.00</p></div>
+            </div>
+            <div class="stat-card card-task">
+                <div class="icon-box"><i class="fa fa-check-square-o"></i></div>
+                <div class="stat-info"><h3>活跃任务</h3><p class="num" th:text="${activeTasks}">0</p></div>
+            </div>
+        </div>
+
+        <div class="grid-wrapper">
+            <div class="chart-box">
+                <div class="chart-header">近 7 天用户增长趋势</div>
+                <div id="lineChart" style="width: 100%; height: 340px;"></div>
+            </div>
+            <div class="chart-box">
+                <div class="chart-header">闲置市场概览</div>
+                <div id="pieChart" style="width: 100%; height: 340px;"></div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script th:inline="javascript">
+    var dateList = [[${chartDate}]];
+    var countList = [[${chartData}]];
+
+    // 折线图
+    var lineChart = echarts.init(document.getElementById('lineChart'));
+    lineChart.setOption({
+        tooltip: { trigger: 'axis' },
+        grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+        xAxis: { type: 'category', boundaryGap: false, data: dateList, axisLine: {lineStyle: {color: '#cbd5e0'}} },
+        yAxis: { type: 'value', splitLine: {lineStyle: {type: 'dashed', color: '#edf2f7'}} },
+        series: [{
+            name: '新增用户', type: 'line', smooth: true,
+            itemStyle: { color: '#ed8936' },
+            areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{offset: 0, color: '#ed893666'}, {offset: 1, color: '#ed893600'}]) },
+            data: countList
+        }]
+    });
+
+    // 饼图
+    var pieChart = echarts.init(document.getElementById('pieChart'));
+    pieChart.setOption({
+        tooltip: { trigger: 'item' },
+        legend: { top: '5%', left: 'center' },
+        series: [{
+            name: '商品状态', type: 'pie', radius: ['40%', '70%'],
+            avoidLabelOverlap: false,
+            itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
+            label: { show: false, position: 'center' },
+            emphasis: { label: { show: true, fontSize: 18, fontWeight: 'bold', color: '#2d3748' } },
+            data: [
+                { value: [[${statSold}]], name: '在售', itemStyle: { color: '#7abafd' } },
+                { value: [[${statOnSale}]], name: '已售', itemStyle: { color: '#ff9a9e' } },
+                { value:[[${statDeleted}]], name: '下架', itemStyle: { color: '#cbd5e0' } }
+            ]
+        }]
+    });
+
+    window.onresize = function() { lineChart.resize(); pieChart.resize(); };
+</script>
+
+</body>
+</html>

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>校园互助平台 - 首页</title>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <style>
+    /* === 1. 全局莫兰迪基调 === */
+    :root {
+      /* 莫兰迪色板 */
+      --morandi-bg: #fdfcf8;       /* 极淡的灰蓝底色，不刺眼的白 */
+      --morandi-text-main: #2d3748;/* 灰蓝色文字，比纯黑柔和 */
+      --morandi-text-sub: #718096; /* 浅灰蓝辅助文字 */
+
+      /* 跑腿：婴儿蓝 (Baby Blue) */
+      --card-blue: #EEF7FF;        /* 背景：极淡蓝 */
+      --icon-blue: #7abafd;        /* 图标：柔和蓝 */
+
+      /* 市场：蜜桃粉 (Peach) */
+      --card-pink: #fff5f5;        /* 背景：极淡粉 */
+      --icon-pink: #ff9a9e;        /* 图标：暖粉色 */
+
+      /* 订单：薄荷绿 (Mint) */
+      --card-green: #f0fff4;       /* 背景：极淡绿 */
+      --icon-green: #81e6d9;       /* 图标：清爽绿 */
+
+      /* 公告：香芋紫 (Taro) */
+      --card-purple: #faf5ff;      /* 背景：极淡紫 */
+      --icon-purple: #b794f4;      /* 图标：香芋紫 */
+
+      /* 个人：柠檬黄 (Lemon) */
+      --card-profile: #fffff0;     /* 背景：极淡黄 */
+      --icon-profile: #c5b86c;     /* 图标：暖黄色 */
+
+      /* 管理：珊瑚红 (Coral) */
+      --card-admin: #fff5f5;
+      --icon-admin: #fc8181;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif;
+      background-color: var(--morandi-bg);
+      /* 加一点点噪点纹理，增加质感（可选） */
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+      color: var(--morandi-text-main);
+    }
+
+    .dashboard-container {
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    /* === 2. 顶部资产卡片：极简主义 === */
+    .hero-section {
+      background: linear-gradient(135deg, #fae8d3 0%, #face94 100%);
+      border-radius: 24px;
+      padding: 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 20px 40px -10px rgba(189, 195, 199, 0.4); /* 柔和的投影 */
+      margin-bottom: 50px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* 装饰用的柔和光斑 */
+    .hero-section::after {
+      content: '';
+      position: absolute;
+      top: -50%; left: -20%;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 70%);
+      opacity: 0.5;
+    }
+
+    .greeting h1 {
+      margin: 0;
+      font-size: 2rem;
+      font-weight: 600;
+      color: #1a202c; /* 改成深黑色，原为 #455a64 */
+      letter-spacing: 1px;
+    }
+
+    .greeting p {
+      margin-top: 10px;
+      font-size: 1rem;
+      color: #4a5568; /* 改成深灰色，原为 #78909c */
+    }
+
+    .money-box small {
+      display: block;
+      font-size: 0.9rem;
+      color: #4a5568; /* 改成深灰色，原为 #78909c */
+      margin-bottom: 5px;
+    }
+
+    .money-box .amount {
+      font-size: 2.5rem;
+      font-weight: 300;
+      color: #1a202c; /* 改成深黑色，原为 #455a64 */
+      font-family: 'Optima', sans-serif;
+    }
+    .money-box {
+      text-align: right;
+      z-index: 2;
+    }
+
+
+    /* === 3. 模块网格 === */
+    .module-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 30px;
+    }
+
+    /* === 4. 卡片设计：轻盈、通透 === */
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 35px 30px;
+      text-decoration: none;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* 更有弹性的动画 */
+      border: 1px solid rgba(255,255,255,0.8);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start; /* 左对齐更文艺 */
+      border: 1px solid rgba(0,0,0,0.08);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.04);
+    }
+
+    /* 悬停效果：轻微上浮，阴影变柔和 */
+    .card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 15px 35px rgba(189, 195, 199, 0.3);
+      background: #fff;
+    }
+
+    /* 图标容器：圆形、低饱和色 */
+    .icon-circle {
+      width: 60px; height: 60px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin-bottom: 25px;
+      transition: transform 0.3s ease;
+    }
+    .card:hover .icon-circle {
+      transform: scale(1.1) rotate(10deg);
+    }
+
+    /* --- 各个模块的莫兰迪配色 --- */
+
+    /* 跑腿：灰蓝色调 */
+    .style-task .icon-circle { background-color: var(--card-blue); color: var(--icon-blue); }
+    /* 市场：脏粉色调 */
+    .style-market .icon-circle { background-color: var(--card-pink); color: var(--icon-pink); }
+    /* 订单：豆沙绿调 */
+    .style-order .icon-circle { background-color: var(--card-green); color: var(--icon-green); }
+    /* 公告：灰紫色调 */
+    .style-notice .icon-circle { background-color: var(--card-purple); color: var(--icon-purple); }
+
+    /* 个人：暖沙色调 */
+    .style-profile .icon-circle { background-color: #fcf4e8; color: #bcaaa4; }
+    /* 管理：砖红色调 */
+    .style-admin .icon-circle { background-color: #fbe9e7; color: #ffab91; }
+
+
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--morandi-text-main);
+      margin-bottom: 8px;
+    }
+
+    .card-desc {
+      font-size: 0.95rem;
+      color: var(--morandi-text-sub);
+      line-height: 1.6;
+      font-weight: 400;
+    }
+
+    /* 底部的一个小横杠装饰，替代箭头 */
+    .card::after {
+      content: '';
+      width: 30px;
+      height: 3px;
+      background-color: #eceff1;
+      margin-top: 25px;
+      transition: width 0.3s ease, background-color 0.3s;
+    }
+
+    .card:hover::after {
+      width: 50px;
+    }
+    .style-task:hover::after { background-color: var(--icon-blue); }
+    .style-market:hover::after { background-color: var(--icon-pink); }
+    .style-order:hover::after { background-color: var(--icon-green); }
+    /* 公告：使用紫色变量 */
+    .style-notice:hover::after { background-color: var(--icon-purple); }
+
+    /* 个人中心：使用你设置的图标色(暖沙色/褐色) */
+    /* 注意：这里我取了你下方 .style-profile 中定义的颜色 #bcaaa4 以保持同色系 */
+    .style-profile:hover::after { background-color: #bcaaa4; }
+
+    /* 秩序管理：使用你设置的图标色(砖红/橙红) */
+    /* 注意：这里我取了你下方 .style-admin 中定义的颜色 #ffab91 以保持同色系 */
+    .style-admin:hover::after { background-color: #ffab91; }
+
+    /* 退出按钮：极简文字 */
+    .logout-box {
+      text-align: center;
+      margin-top: 60px;
+      margin-bottom: 40px;
+    }
+
+    .btn-simple {
+      /* 1. 颜色加深：从极浅的 #b0bec5 改为清晰的深灰 #718096 */
+      color: #718096;
+      text-decoration: none; /* 确保默认没有下划线 */
+      font-size: 0.95rem;    /* 稍微调大一点点字体 */
+      font-weight: 500;      /* 稍微加粗一点点 */
+      transition: all 0.3s;
+
+      /* 2. 彻底删除原来的 border-bottom 属性，就没有横线了 */
+      border-bottom: none;
+    }
+
+    .btn-simple:hover {
+      /* 3. 悬浮效果：只改变颜色，不加横线 */
+      color: #2d3748; /* 鼠标放上去变黑 */
+      transform: scale(1.05); /* 选做：鼠标放上去稍微放大一点点，更灵动 */
+    }
+
+  </style>
+</head>
+<body>
+
+<div class="dashboard-container">
+
+  <div class="hero-section">
+    <div class="greeting">
+      <h1>Hello, <span th:text="${user.nickname}">同学</span></h1>
+      <p>
+        <span class="role-badge" th:if="${user.role == 'ADMIN'}">管理员</span>
+        <span class="role-badge" th:if="${user.role != 'ADMIN'}">同学</span>
+        今天也是充满元气的一天 ✨
+      </p>
+    </div>
+    <div class="money-box">
+      <small>Current Balance</small>
+      <div class="amount">
+        ¥ <span th:text="${user.balance != null ? user.balance : '0.00'}">0.00</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="module-grid">
+
+    <a th:href="@{/task/list}" class="card style-task">
+      <div class="icon-circle"><i class="fa fa-paper-plane-o"></i></div>
+      <div class="card-title">互助跑腿</div>
+      <div class="card-desc">代取快递 / 食堂带饭<br>举手之劳的小确幸</div>
+    </a>
+
+    <a th:href="@{/market/list}" class="card style-market">
+      <div class="icon-circle"><i class="fa fa-shopping-basket"></i></div>
+      <div class="card-title">闲置市集</div>
+      <div class="card-desc">让旧物遇见新主人<br>环保又温暖</div>
+    </a>
+
+    <a th:href="@{/order/my_orders}" class="card style-order">
+      <div class="icon-circle"><i class="fa fa-file-text-o"></i></div>
+      <div class="card-title">订单中心</div>
+      <div class="card-desc">记录每一笔小交易<br>井井有条</div>
+    </a>
+
+    <a th:href="@{/notice/list}" class="card style-notice">
+      <div class="icon-circle"><i class="fa fa-bell-o"></i></div>
+      <div class="card-title">公告栏</div>
+      <div class="card-desc">学校的新鲜事<br>都在这里</div>
+    </a>
+
+    <a th:href="@{/user/profile}" class="card style-profile">
+      <div class="icon-circle"><i class="fa fa-user-o"></i></div>
+      <div class="card-title">个人中心</div>
+      <div class="card-desc">整理我的小档案<br>实名认证</div>
+    </a>
+
+    <a th:href="@{/admin/dashboard}" class="card style-admin" th:if="${user.role == 'ADMIN'}">
+      <div class="icon-circle"><i class="fa fa-eye"></i></div>
+      <div class="card-title">管理后台</div>
+      <div class="card-desc">数据监控/用户管理<br>掌控全局</div>
+    </a>
+
+  </div>
+
+  <div class="logout-box">
+    <a th:href="@{/auth/logout}" class="btn-simple">退出登录 Log out</a>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>用户管理后台</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+  <style>
+    /* === 1. 核心视觉系统 (复用首页) === */
+    :root {
+      --morandi-bg: #fdfcf8;
+      --morandi-text-main: #2d3748;
+      --morandi-text-sub: #718096;
+      --admin-gradient-start: #ffedd5;
+      --admin-gradient-end: #fff5f5;
+      --admin-accent: #fc8181;
+      --admin-text: #c05621;
+      --status-ok-bg: #f0fff4;
+      --status-ok-text: #38a169;
+      --status-ban-bg: #fff5f5;
+      --status-ban-text: #e53e3e;
+    }
+
+    body {
+      margin: 0; padding: 0; /* 去掉 padding，交给布局容器 */
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--morandi-bg);
+      color: var(--morandi-text-main);
+    }
+
+    /* 你的卡片样式 */
+    .content-card {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+      margin: 30px; /* 加点边距，不然贴着侧边栏太丑 */
+    }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid #f7fafc; padding-bottom: 15px; }
+    .page-title { font-size: 22px; font-weight: bold; color: #2d3748; margin: 0; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; padding: 15px; color: #718096; font-size: 14px; background: #f7fafc; border-bottom: 2px solid #cbd5e0; }
+    td { padding: 15px; border-bottom: 1px solid #e2e8f0; color: #2d3748; }
+
+    .badge { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+    .badge-ok { background: var(--status-ok-bg); color: var(--status-ok-text); }
+    .badge-ban { background: var(--status-ban-bg); color: var(--status-ban-text); }
+
+    .action-btn { border: none; padding: 6px 15px; border-radius: 6px; cursor: pointer; font-size: 13px; transition: 0.2s; display: inline-flex; align-items: center; gap: 5px; }
+    .btn-ban { background: #fff5f5; color: #e53e3e; }
+    .btn-ban:hover { background: #fed7d7; }
+    .btn-unban { background: #f0fff4; color: #38a169; }
+    .btn-unban:hover { background: #c6f6d5; }
+
+    /* 🔥 新增：布局容器样式，用于放置侧边栏 */
+    .admin-layout-wrapper {
+      display: flex;
+      min-height: 100vh;
+      width: 100%;
+    }
+    .admin-main-content {
+      flex: 1; /* 占满剩余空间 */
+      overflow-y: auto; /* 允许内容滚动 */
+      background-color: var(--morandi-bg);
+    }
+  </style>
+</head>
+<body>
+
+<div class="admin-layout-wrapper">
+
+  <div th:replace="~{admin/sidebar :: sidebar('users')}"></div>
+
+  <div class="admin-main-content">
+    <div class="content-card">
+      <div class="page-header">
+        <h2 class="page-title"><i class="fa fa-users" style="color: #667eea; margin-right: 10px;"></i>用户列表管理</h2>
+        <span style="color: #718096; font-size: 14px;">共 <span th:text="${userList.size()}">0</span> 位用户</span>
+      </div>
+
+      <div class="filter-bar" style="margin-bottom: 20px; display: flex; gap: 10px;">
+        <form action="/admin/users" method="get" style="display: flex; gap: 10px; width: 100%;">
+          <select name="status" class="form-control" style="width: 150px;" onchange="this.form.submit()">
+            <option value="" th:selected="${currentStatus == null}">所有状态</option>
+            <option value="1" th:selected="${currentStatus == 1}">✅ 正常</option>
+            <option value="0" th:selected="${currentStatus == 0}">⛔ 封禁中</option>
+          </select>
+          <input type="text" name="keyword" class="form-control"
+                 th:value="${keyword}" placeholder="搜索学号、姓名..." style="width: 200px;">
+          <button type="submit" class="btn-primary" style="padding: 0 20px; border-radius: 8px; border:none; background:#667eea; color:white;">
+            <i class="fa fa-search"></i> 搜索
+          </button>
+        </form>
+      </div>
+
+
+      <table>
+        <thead>
+        <tr>
+          <th>ID</th>
+          <th>账号/昵称</th>
+          <th>实名信息</th> <th>交易统计 (发/接/卖/买)</th> <th>角色</th>
+          <th>状态</th>
+          <th>注册时间</th>
+          <th>操作</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="u : ${userList}">
+          <td th:text="${u.id}"></td>
+
+          <td>
+            <div style="font-weight:bold" th:text="${u.username}"></div>
+            <div style="font-size:12px; color:#aaa" th:text="${u.nickname}"></div>
+          </td>
+
+          <td>
+            <div th:if="${u.isVerified == 1}">
+              <span class="badge badge-ok">已认证</span><br>
+              <span style="font-size:12px; color:#2d3748;">
+                 姓名: <span th:text="${u.realName}"></span><br>
+                 学号: <span th:text="${u.studentNo}"></span>
+              </span>
+            </div>
+            <div th:if="${u.isVerified == 0}">
+              <span style="color:#718096; font-size:12px;">未认证</span>
+            </div>
+          </td>
+
+          <td>
+            <div style="font-size: 13px; line-height: 1.6;">
+              <span title="发布的任务数">📢 发任务: <b th:text="${u.publishedTaskCount}" style="color: #4299e1;"></b></span>
+              <span style="margin:0 5px; color:#e2e8f0;">|</span>
+              <span title="接受的任务数">⚡ 接任务: <b th:text="${u.takenTaskCount}" style="color: #ecc94b;"></b></span>
+              <br>
+              <span title="上架的商品数">🛍️ 上架数: <b th:text="${u.itemSoldCount}" style="color: #ed64a6;"></b></span>
+              <span style="margin:0 5px; color:#e2e8f0;">|</span>
+              <span title="购买的订单数">📦 购买数: <b th:text="${u.itemBoughtCount}" style="color: #48bb78;"></b></span>
+            </div>
+          </td>
+
+          <td>
+            <span th:if="${u.role == 'ADMIN'}" style="color:#e53e3e; font-weight:bold;">管理员</span>
+            <span th:if="${u.role == 'USER'}" style="color:#718096;">学生</span>
+          </td>
+          <td>
+            <span th:if="${u.status == 1}" class="badge badge-ok">正常</span>
+            <span th:if="${u.status == 0}" class="badge badge-ban">封禁中</span>
+          </td>
+          <td th:text="${#temporals.format(u.createTime, 'yyyy-MM-dd HH:mm')}"></td>
+          <td>
+            <div th:if="${u.role != 'ADMIN'}">
+              <button th:if="${u.status == 1}" class="action-btn btn-ban" th:onclick="'changeStatus(' + ${u.id} + ', 0)'"><i class="fa fa-ban"></i> 封禁</button>
+              <button th:if="${u.status == 0}" class="action-btn btn-unban" th:onclick="'changeStatus(' + ${u.id} + ', 1)'"><i class="fa fa-unlock"></i> 解封</button>
+            </div>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  function changeStatus(userId, newStatus) {
+    let actionName = newStatus === 0 ? "封禁" : "解封";
+    let confirmMsg = newStatus === 0
+            ? "⚠️ 确定要【封禁】该用户吗？\n封禁后该用户将无法登录系统。"
+            : "✨ 确定要【解封】该用户吗？\n解封后该用户可正常使用功能。";
+
+    if (confirm(confirmMsg)) {
+      const formData = new FormData();
+      formData.append("userId", userId);
+      formData.append("status", newStatus);
+
+      fetch('/admin/updateStatus', {
+        method: 'POST',
+        body: formData
+      })
+              .then(res => res.json())
+              .then(res => {
+                if (res.code === "200") {
+                  // 成功后刷新页面
+                  location.reload();
+                } else {
+                  alert(res.msg);
+                }
+              });
+    }
+  }
+</script>
+
+</body>
+</html>

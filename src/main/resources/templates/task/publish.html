@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>发布任务</title>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <style>
+        /* === 1. 核心配色 (统一风格) === */
+        :root {
+            --bg-body: #f8fafc;
+            --text-main: #1a202c;
+            --text-sub: #718096;
+
+            /* 蓝色主调 */
+            --theme-blue-bg: #ebf8ff;
+            --theme-blue-light: #bee3f8;
+            --theme-blue-main: #4299e1;
+            --theme-blue-dark: #2b6cb0;
+
+            /* 辅助提示色 */
+            --warn-orange: #ed8936;
+
+            /* 卡片属性 */
+            --card-radius: 20px;
+            --card-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.01);
+        }
+
+        body {
+            margin: 0; padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background-color: var(--bg-body);
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px 80px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+        }
+
+        /* === 2. 主卡片设计 === */
+        .publish-card {
+            background: #fff;
+            border-radius: var(--card-radius);
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.6);
+            position: relative;
+        }
+
+        /* 顶部通栏 */
+        .card-header {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f0f9ff 100%);
+            padding: 45px 50px;
+            border-bottom: 1px solid rgba(255,255,255,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 顶部背景装饰图标 */
+        .header-bg-icon {
+            position: absolute;
+            right: -20px; top: -30px;
+            font-size: 10rem;
+            color: var(--theme-blue-main);
+            opacity: 0.05;
+            transform: rotate(-15deg);
+            pointer-events: none;
+        }
+
+        .header-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #2d3748;
+            margin: 0 0 10px 0;
+            display: flex; align-items: center; gap: 15px;
+            position: relative;
+            z-index: 2;
+        }
+        .header-desc {
+            font-size: 1.1rem; color: #718096; margin: 0;
+            position: relative; z-index: 2;
+        }
+
+        /* === 3. 表单区域 (舒朗风格) === */
+        .card-body {
+            padding: 50px;
+        }
+
+        .form-section {
+            margin-bottom: 35px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 12px;
+        }
+        .input-hint {
+            font-size: 0.9rem;
+            color: #718096;
+            font-weight: normal;
+            margin-left: 10px;
+        }
+
+        /* 输入框通用样式 */
+        .form-control {
+            width: 100%;
+            padding: 16px 20px;
+            font-size: 1.1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            background-color: #fff;
+            color: #2d3748;
+            transition: all 0.2s;
+            box-sizing: border-box; /* 关键：防止宽度溢出 */
+            font-family: inherit;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--theme-blue-main);
+            box-shadow: 0 0 0 4px rgba(66, 153, 225, 0.15);
+        }
+
+        .form-control::placeholder {
+            color: #cbd5e0;
+        }
+
+        textarea.form-control {
+            min-height: 180px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        /* 金额输入框特殊处理 */
+        .input-group {
+            position: relative;
+        }
+        .input-prefix {
+            position: absolute;
+            left: 20px; top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2rem;
+            color: #718096;
+            font-weight: bold;
+        }
+        .form-control.has-prefix {
+            padding-left: 45px;
+        }
+
+        /* 余额提示 */
+        .balance-tip {
+            margin-top: 8px;
+            font-size: 0.95rem;
+            color: var(--warn-orange);
+            display: flex; align-items: center; gap: 6px;
+        }
+
+        /* === 4. 底部操作栏 === */
+        .action-bar {
+            margin-top: 30px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        /* 按钮样式 */
+        .btn-big {
+            padding: 16px 40px;
+            border-radius: 12px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+        }
+
+        /* 发布按钮 (渐变蓝) */
+        .btn-publish {
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+            color: white;
+            box-shadow: 0 10px 20px -5px rgba(66, 153, 225, 0.4);
+            flex: 1; /* 撑满剩余空间 */
+        }
+        .btn-publish:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 25px -5px rgba(66, 153, 225, 0.5);
+        }
+
+        /* 返回按钮 */
+        .btn-cancel {
+            background: #f1f5f9;
+            color: #718096;
+            width: auto;
+        }
+        .btn-cancel:hover {
+            background: #e2e8f0; color: #2d3748;
+        }
+
+        /* 响应式适配 */
+        @media (max-width: 600px) {
+            .card-header, .card-body { padding: 30px 20px; }
+            .header-title { font-size: 1.8rem; }
+            .action-bar { flex-direction: column-reverse; }
+            .btn-big { width: 100%; }
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="publish-card">
+
+        <div class="card-header">
+            <i class="fa fa-paper-plane header-bg-icon"></i>
+
+            <h1 class="header-title">
+                发布新任务
+            </h1>
+            <p class="header-desc">
+                Fill in the details / 填写详情，呼唤伙伴们的帮助
+            </p>
+        </div>
+
+        <div class="card-body">
+            <form th:action="@{/task/publish}" method="post">
+
+                <div class="form-section">
+                    <label class="input-label">任务标题 Title</label>
+                    <input type="text" name="title" class="form-control"
+                           placeholder="例如：代取快递（北门到西二舍）" required>
+                </div>
+
+                <div class="form-section">
+                    <label class="input-label">详细描述 Description</label>
+                    <textarea name="content" class="form-control"
+                              placeholder="请描述具体要求，如：快递大小、取件码、送达时间限制等..." required></textarea>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px;">
+
+                    <div class="form-section">
+                        <label class="input-label">
+                            悬赏金额 Reward
+                            <span class="input-hint">最低 1.00 元</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-prefix">¥</span>
+                            <input type="number" name="reward" class="form-control has-prefix"
+                                   step="0.01" min="1" placeholder="0.00" required>
+                        </div>
+                        <div class="balance-tip">
+                            <i class="fa fa-info-circle"></i> 发布即扣除余额，任务被接单前可随时取消退款
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <label class="input-label">截止时间 Deadline</label>
+                        <input type="datetime-local" name="deadline" class="form-control" required>
+                    </div>
+
+                </div>
+
+                <div class="action-bar">
+                    <a th:href="@{/task/list}" class="btn-big btn-cancel">
+                        取消返回
+                    </a>
+                    <button type="submit" class="btn-big btn-publish">
+                        <i class="fa fa-paper-plane-o"></i> 确认发布
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    /* 错误提示处理 */
+    var errorMsg = [[${errorMsg}]];
+    if (errorMsg) {
+        alert(errorMsg);
+    }
+</script>
+
+</body>
+</html>

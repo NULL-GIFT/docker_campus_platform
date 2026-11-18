@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任务大厅</title>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <style>
+        /* === 1. 核心配色 (源自 Index) === */
+        :root {
+            /* 基础色板 */
+            --morandi-bg: #fdfcf8;
+            --morandi-text-main: #2d3748;
+            --morandi-text-sub: #718096;
+
+            /* 核心蓝调 - 你的主色 */
+            --theme-blue-light: #EEF7FF;   /* 极淡蓝背景 */
+            --theme-blue-medium: #bedbfc;  /* 装饰性浅蓝 */
+            --theme-blue-main: #7abafd;    /* 核心图标蓝 */
+            --theme-blue-dark: #3182ce;    /* 深色文字/按钮 */
+
+            /* 价格/强调色 */
+            --accent-price: #ff7675;       /* 柔和的红 */
+
+            /* 卡片属性 */
+            --card-radius: 24px;
+            --card-shadow: 0 10px 30px -10px rgba(162, 178, 190, 0.2);
+            --card-shadow-hover: 0 20px 40px -10px rgba(122, 186, 253, 0.25);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background-color: var(--morandi-bg);
+            /* 统一噪点纹理 */
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+            color: var(--morandi-text-main);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 20px 80px;
+        }
+
+        /* === 2. 顶部 Header (呼应首页 Hero Section) === */
+        .page-header {
+            background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
+            border-radius: var(--card-radius);
+            padding: 30px 40px;
+            margin-bottom: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+            border: 1px solid rgba(255,255,255,0.6);
+        }
+
+        /* 装饰光斑 */
+        .page-header::before {
+            content: ''; position: absolute; top: -50px; right: -50px;
+            width: 200px; height: 200px; background: rgba(122, 186, 253, 0.15);
+            border-radius: 50%; filter: blur(40px); pointer-events: none;
+        }
+
+        .tab-btn {
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding: 8px 20px;
+            text-decoration: none;
+            border-radius: 40px;
+            transition: all 0.2s;
+        }
+        .tab-inactive {
+            color: #718096;
+            background: #f1f5f9;
+        }
+        .tab-inactive:hover {
+            background: #e2e8f0;
+            color: #2d3748;
+        }
+        .tab-active {
+            background: var(--theme-blue-main);
+            color: white;
+            box-shadow: 0 4px 10px rgba(66, 153, 225, 0.3);
+        }
+
+        .header-title h1 {
+            margin: 0; font-size: 1.8rem; color: #1e3a8a; letter-spacing: 1px;
+            display: flex; align-items: center; gap: 12px;
+        }
+        .header-title p {
+            margin: 8px 0 0; color: #64748b; font-size: 0.95rem;
+        }
+
+        .header-actions {
+            display: flex; gap: 15px; z-index: 2;
+        }
+
+        /* 顶部按钮组 */
+        .nav-btn {
+            text-decoration: none; padding: 10px 20px; border-radius: 50px;
+            font-size: 0.9rem; font-weight: 600; transition: all 0.3s ease;
+            display: inline-flex; align-items: center; gap: 6px;
+        }
+        .nav-btn.secondary {
+            background: rgba(255,255,255,0.6); color: var(--morandi-text-sub);
+        }
+        .nav-btn.secondary:hover {
+            background: #fff; color: var(--theme-blue-main); transform: translateY(-2px);
+        }
+        .nav-btn.primary {
+            background: var(--theme-blue-main); color: #fff;
+            box-shadow: 0 4px 15px rgba(122, 186, 253, 0.4);
+        }
+        .nav-btn.primary:hover {
+            background: #63a4fa; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(122, 186, 253, 0.6);
+        }
+
+        /* === 3. 任务网格 === */
+        .task-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 30px;
+        }
+
+        /* === 4. 任务卡片 (核心设计) === */
+        .task-card {
+            background: #fff;
+            border-radius: var(--card-radius);
+            box-shadow: var(--card-shadow);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255,255,255,0.8);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 280px; /* 固定高度保持整齐 */
+        }
+
+        .task-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--card-shadow-hover);
+            border-color: var(--theme-blue-medium);
+        }
+
+        /* 卡片上半部分：蓝色轻渐变背景 */
+        .card-top-section {
+            padding: 20px 25px;
+            background: linear-gradient(to bottom, var(--theme-blue-light), #fff);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        /* Icon Circle (继承 Index 风格) */
+        .task-icon {
+            width: 45px; height: 45px;
+            border-radius: 12px;
+            background: #fff;
+            color: var(--theme-blue-main);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+        }
+
+        /* 价格标签 */
+        .price-tag {
+            font-family: 'Optima', sans-serif;
+            color: var(--accent-price);
+            font-size: 1.4rem;
+            font-weight: bold;
+            display: flex; align-items: baseline;
+        }
+        .price-tag small { font-size: 0.9rem; margin-right: 2px; opacity: 0.8; }
+
+        /* 卡片内容区 */
+        .card-content {
+            padding: 5px 25px 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .task-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed #e2e8f0;
+        }
+
+        .task-title {
+            font-size: 1.15rem; font-weight: 700; color: var(--morandi-text-main);
+            margin-bottom: 8px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        .task-desc {
+            font-size: 0.9rem; color: var(--morandi-text-sub); line-height: 1.5;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+            overflow: hidden; margin-bottom: auto; /* 撑开空间 */
+        }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .st-wait { background: #e6f6ff; color: #0084ff; }
+        .st-expired { background: #fbeaea; color: #e02424; }
+        .st-doing { background: #eefdf5; color: #0e9f6e; }
+        .st-confirm { background: #fff8f1; color: #b45309; }
+        .st-done { background: #f3f4f6; color: #6b7280; }
+        .meta-item { display: flex; align-items: center; gap: 5px; }
+
+        /* 按钮区 */
+        .card-actions {
+            padding: 0 25px 25px;
+            display: flex; gap: 12px;
+        }
+
+        .btn-card {
+            flex: 1;
+            border: none;
+            padding: 10px 0;
+            border-radius: 12px;
+            font-size: 0.9rem; font-weight: 600;
+            cursor: pointer; transition: all 0.3s;
+            text-align: center; text-decoration: none;
+            display: flex; align-items: center; justify-content: center; gap: 5px;
+        }
+
+        /* 详情按钮 - 幽灵态 */
+        .btn-card.ghost {
+            background: #f1f5f9; color: var(--morandi-text-sub);
+        }
+        .btn-card.ghost:hover {
+            background: #e2e8f0; color: var(--morandi-text-main);
+        }
+
+        /* 抢单按钮 - 强调态 */
+        .btn-card.action {
+            background: linear-gradient(135deg, var(--theme-blue-main), #63a4fa);
+            color: white;
+            box-shadow: 0 4px 10px rgba(122, 186, 253, 0.3);
+        }
+        .btn-card.action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(122, 186, 253, 0.4);
+        }
+
+        /* 禁用态 */
+        .btn-card.disabled {
+            background: #f7fafc; color: #cbd5e0;
+            cursor: not-allowed; border: 1px solid #edf2f7;
+            box-shadow: none;
+        }
+
+        /* === 5. 装饰元素：我的任务印章 === */
+        .stamp-mine {
+            position: absolute;
+            top: 50px; right: -20px;
+            font-size: 4rem;
+            color: var(--theme-blue-main);
+            opacity: 0.08;
+            transform: rotate(-15deg);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* === 6. 分页 (复刻 Index 风格) === */
+        .pagination-container {
+            margin-top: 60px;
+            display: flex;
+            justify-content: center;
+        }
+        .pagination-pill {
+            background: #fff;
+            padding: 8px 10px;
+            border-radius: 50px;
+            box-shadow: var(--card-shadow);
+            display: flex; align-items: center; gap: 10px;
+            border: 1px solid rgba(255,255,255,0.8);
+        }
+        .page-link {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            text-decoration: none;
+            color: var(--morandi-text-sub);
+            transition: 0.3s;
+        }
+        .page-link:hover:not(.disabled) {
+            background: var(--theme-blue-light); color: var(--theme-blue-main);
+        }
+        .page-link.disabled { opacity: 0.4; cursor: default; }
+        .page-text { font-size: 0.9rem; font-weight: 600; color: var(--morandi-text-main); padding: 0 10px; }
+
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center; padding: 80px 0;
+            color: var(--morandi-text-sub);
+        }
+        .empty-state i {
+            font-size: 4rem; color: #e2e8f0; margin-bottom: 20px; display: block;
+        }
+        /* 余额芯片样式 */
+        .balance-chip {
+            background: #fef9e3;
+            border-radius: 40px;
+            padding: 8px 18px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #b76e00;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid #ffe6b3;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+            margin: 0 8px;
+        }
+        .balance-chip i {
+            color: #f39c12;
+        }
+        .balance-chip.warning {
+            background: #fee2e2;
+            color: #c0392b;
+            border-color: #f5c6c6;
+        }
+        .balance-chip.warning i {
+            color: #e74c3c;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- 顶部 Banner（只放标题和右侧按钮） -->
+    <div class="page-header">
+        <div class="header-title">
+            <h1><i class="fa fa-paper-plane-o" style="color: var(--theme-blue-main)"></i> 互助跑腿</h1>
+            <p>举手之劳的小确幸，连接你我</p>
+        </div>
+        <div class="header-actions">
+            <a th:href="@{/}" class="nav-btn secondary">
+                <i class="fa fa-arrow-left"></i> 返回
+            </a>
+
+            <!-- 余额显示（非登录状态不显示） -->
+            <div th:if="${session.user != null}"
+                 th:classappend="${session.user.balance < 1} ? 'balance-chip warning' : 'balance-chip'">
+                <i class="fa fa-rmb"></i> 余额: ¥<span th:text="${session.user.balance}">0.00</span>
+            </div>
+
+            <a th:href="@{/user/profile}" class="nav-btn secondary">
+                <i class="fa fa-user-o"></i> 个人
+            </a>
+            <a th:href="@{/task/publish}" class="nav-btn primary">
+                <i class="fa fa-plus"></i> 发布任务
+            </a>
+        </div>
+    </div>
+
+    <!-- Tab 栏独立出来 -->
+    <div class="tab-bar" style="display: flex; gap: 16px; margin-bottom: 30px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">
+        <a th:href="@{/task/list(type='all')}"
+           th:classappend="${currentType == 'all'} ? 'tab-active' : 'tab-inactive'"
+           class="tab-btn">🏠 大厅任务（待接单）</a>
+        <a th:href="@{/task/list(type='mine')}"
+           th:classappend="${currentType == 'mine'} ? 'tab-active' : 'tab-inactive'"
+           class="tab-btn">📋 我发布的任务</a>
+    </div>
+
+    <div th:if="${#lists.isEmpty(pageInfo.list)}" class="empty-state">
+        <i class="fa fa-inbox"></i>
+        <p>大厅空空如也，快去发布第一个任务吧~</p>
+    </div>
+
+    <div class="task-grid" th:unless="${#lists.isEmpty(pageInfo.list)}">
+        <div th:each="task : ${pageInfo.list}" class="task-card">
+
+            <i th:if="${task.publisherId == session.user.id}" class="fa fa-user-circle stamp-mine"></i>
+
+            <div class="card-top-section">
+                <div class="task-icon">
+                    <i class="fa fa-cube"></i>
+                </div>
+                <div class="price-tag">
+                    <small>¥</small><span th:text="${task.reward}">20.0</span>
+                </div>
+            </div>
+
+            <div class="card-content">
+                <div class="task-title" th:text="${task.title}">取快递，北门到西二舍</div>
+                <div class="task-desc" th:text="${task.content}">
+                    包裹不大，大概两公斤，中午12点前送到即可。
+                </div>
+                <div class="task-meta" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 15px; border-top: 1px dashed #e2e8f0;">
+                    <div class="meta-item">
+                        <i class="fa fa-clock-o"></i>
+                        <span th:text="${#temporals.format(task.deadline, 'MM-dd HH:mm')}">06-20 13:55</span>
+                    </div>
+                    <div class="meta-item">
+                        <!-- 状态徽章 -->
+                        <span th:if="${task.status == 0 and !task.expired}" class="status-badge st-wait">⏳ 待接单</span>
+                        <span th:if="${task.status == 0 and task.expired}" class="status-badge st-expired">⏰ 已截止</span>
+                        <span th:if="${task.status == 1}" class="status-badge st-doing">🏃 进行中</span>
+                        <span th:if="${task.status == 2}" class="status-badge st-confirm">✅ 待验收</span>
+                        <span th:if="${task.status == 3}" class="status-badge st-done">🎉 已完成</span>
+                        <span th:if="${task.status == -1}" class="status-badge st-expired">❌ 已过期</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-actions">
+                <!-- 公共：详情按钮 -->
+                <a th:href="@{/task/detail(taskId=${task.id})}" class="btn-card ghost">详情</a>
+
+                <!-- 大厅模式：显示抢单按钮（如果不是自己发布的） -->
+                <th:block th:if="${currentType == 'all'}">
+                    <form th:if="${task.publisherId != session.user.id}" th:action="@{/task/take}" method="post" style="flex:1; display:flex;">
+                        <input type="hidden" name="taskId" th:value="${task.id}">
+                        <button type="submit" class="btn-card action">
+                            <i class="fa fa-bolt"></i> 立即抢单
+                        </button>
+                    </form>
+                    <div th:if="${task.publisherId == session.user.id}" class="btn-card disabled">
+                        <i class="fa fa-check"></i> 我发布的
+                    </div>
+                </th:block>
+
+                <!-- 我的发布模式：显示编辑/删除（仅当任务状态为待接单且未过期） -->
+                <th:block th:if="${currentType == 'mine'}">
+                    <a th:if="${task.status == 0 and !task.expired}"
+                       th:href="@{/task/edit(taskId=${task.id})}"
+                       class="btn-card ghost" style="background:#ebf8ff; color:#3182ce;">
+                        <i class="fa fa-pencil"></i> 编辑
+                    </a>
+                    <form th:if="${task.status == 0 and !task.expired}"
+                          th:action="@{/task/delete}" method="post"
+                          onsubmit="return confirm('删除任务将退还赏金，确定吗？')" style="flex:1;">
+                        <input type="hidden" name="taskId" th:value="${task.id}">
+                        <button type="submit" class="btn-card action" style="background:#fff5f5; color:#e53e3e;">
+                            <i class="fa fa-trash-o"></i> 删除退款
+                        </button>
+                    </form>
+                    <!-- 新增：重新发布按钮（仅当任务已过期且未删除时显示） -->
+                    <form th:if="${(task.status == -1 or (task.status == 0 and task.expired))}"
+                          th:action="@{/task/republish}" method="post" style="flex:1;">
+                        <input type="hidden" name="taskId" th:value="${task.id}">
+                        <button type="submit" class="btn-card action" style="background:#fbbf24; color:#fff;">
+                            <i class="fa fa-repeat"></i> 重新发布
+                        </button>
+                    </form>
+                    <span th:if="${task.status != 0 or task.expired}" class="btn-card disabled">
+                        <i class="fa fa-lock"></i> 不可操作
+                    </span>
+                </th:block>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="pagination-container" th:if="${pageInfo.total > 0}">
+        <div class="pagination-pill">
+            <a th:if="${pageInfo.hasPreviousPage}"
+               th:href="@{/task/list(pageNum=${pageInfo.prePage},type=${currentType})}"
+               class="page-link">
+                <i class="fa fa-chevron-left"></i>
+            </a>
+            <span th:unless="${pageInfo.hasPreviousPage}" class="page-link disabled">
+               <i class="fa fa-chevron-left"></i>
+            </span>
+
+            <span class="page-text" th:text="${pageInfo.pageNum} + ' / ' + ${pageInfo.pages}">1 / 5</span>
+
+            <a th:if="${pageInfo.hasNextPage}"
+               th:href="@{/task/list(pageNum=${pageInfo.nextPage},type=${currentType})}"
+               class="page-link">
+                <i class="fa fa-chevron-right"></i>
+            </a>
+            <span th:unless="${pageInfo.hasNextPage}" class="page-link disabled">
+               <i class="fa fa-chevron-right"></i>
+            </span>
+        </div>
+    </div>
+
+</div>
+
+<script th:inline="javascript">
+    var errorMsg = [[${errorMsg}]];
+    var needVerify = [[${needVerify}]];
+    if (errorMsg) {
+        alert(errorMsg);
+        if (needVerify) window.location.href = '/user/profile';
+    }
+</script>
+
+</body>
+</html>

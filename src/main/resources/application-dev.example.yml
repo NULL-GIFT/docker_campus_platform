@@ -1,0 +1,24 @@
+# Copy to application-dev.yml and fill in your local settings.
+# application-dev.yml is local-only and ignored by Git.
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  thymeleaf:
+    cache: false
+    mode: HTML
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/campus_platform?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8
+    username: YOUR_DATABASE_USERNAME
+    password: YOUR_DATABASE_PASSWORD
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: YOUR_REDIS_PASSWORD
+
+file:
+  upload-dir: D:/temp/campus_upload/

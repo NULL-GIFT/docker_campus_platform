@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>确认支付 - 校园生活平台</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <style>
+        :root {
+            --bg-color: #fcfdfc;
+            --text-main: #2c3e50;
+            --text-sub: #7f8c8d;
+            --vital-green-primary: #42b983;
+            --vital-green-dark: #2d8a60;
+            --vital-green-light: #e0f2ea;
+            --vital-gradient: linear-gradient(135deg, #42b983 0%, #3498db 100%);
+            --vital-gradient-green: linear-gradient(135deg, #42b983 0%, #2ecc71 100%);
+            --shadow-soft: 0 8px 20px rgba(66, 185, 131, 0.15);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 导航栏样式 */
+        .navbar-edu {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            padding: 1rem 0;
+            border-bottom: 1px solid rgba(0,0,0,0.03);
+        }
+        .brand-dot {
+            width: 10px; height: 10px; background: var(--vital-gradient-green);
+            border-radius: 50%; display: inline-block; margin-right: 8px;
+        }
+
+        /* 支付卡片样式 */
+        .pay-card {
+            background: white;
+            border-radius: 24px;
+            box-shadow: var(--shadow-soft);
+            padding: 40px;
+            max-width: 500px;
+            margin: 60px auto;
+            text-align: center;
+            border: 1px solid rgba(0,0,0,0.02);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 顶部装饰条 */
+        .pay-card::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 6px;
+            background: var(--vital-gradient-green);
+        }
+
+        .order-no-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-family: monospace;
+            color: var(--text-sub);
+            border: 1px dashed #dee2e6;
+        }
+
+        .order-no-text {
+            font-weight: bold;
+            color: var(--text-main);
+            font-size: 1.1rem;
+        }
+
+        /* 按钮组样式 */
+        .btn-edu {
+            background: var(--vital-gradient-green);
+            color: white;
+            border: none; border-radius: 14px;
+            padding: 12px 30px; font-weight: 600;
+            text-decoration: none; display: inline-block;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(66, 185, 131, 0.3);
+            width: 100%; margin-bottom: 15px;
+        }
+        .btn-edu:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(66, 185, 131, 0.4); color: white; }
+
+        .btn-outline-secondary-edu {
+            background: white; color: var(--text-sub);
+            border: 1px solid #e0e0e0; border-radius: 14px;
+            padding: 10px 20px; font-weight: 600;
+            text-decoration: none; display: inline-block;
+            transition: all 0.3s ease; width: 48%;
+        }
+        .btn-outline-secondary-edu:hover { background: #f8f9fa; color: var(--text-main); }
+
+        .btn-outline-danger-edu {
+            background: white; color: #ff6b6b;
+            border: 1px solid #ffe5e5; border-radius: 14px;
+            padding: 10px 20px; font-weight: 600;
+            text-decoration: none; display: inline-block;
+            transition: all 0.3s ease; width: 48%;
+        }
+        .btn-outline-danger-edu:hover { background: #fff0f0; border-color: #ff6b6b; }
+
+        .error-box {
+            background: #fff5f5; border-left: 4px solid #ff6b6b;
+            color: #e03131; padding: 15px; border-radius: 8px;
+            margin-bottom: 20px; text-align: left; font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar-edu">
+    <div class="container">
+        <div class="d-flex align-items-center">
+            <span class="brand-dot"></span>
+            <span class="fs-5 fw-bold text-dark">收银台</span>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="pay-card">
+        <h3 class="fw-bold mb-3">确认支付</h3>
+        <p class="text-muted mb-4">请检查确认订单页的详细信息</p>
+
+        <div th:if="${param.payError != null and param.payError[0] == 'balance'}" class="error-box">
+            <strong>⚠️ 支付失败：</strong>
+            <span>余额不足，支付失败</span>
+        </div>
+
+        <div th:if="${param.payError != null and param.payError[0] == 'invalid'}" class="error-box">
+            <strong>⚠️ 支付失败：</strong>
+            <span>订单状态异常，请返回订单中心重新查看。</span>
+        </div>
+
+        <div class="order-no-box">
+            <div class="small text-muted mb-1">订单编号</div>
+            <span class="order-no-text" th:text="${orderNo}">ORDER_NO_PLACEHOLDER</span>
+        </div>
+
+        <input type="hidden" id="createTime" th:value="${order.createTime.time}">
+        <input type="hidden" id="orderNo" th:value="${order.orderNo}">
+
+        <div class="alert alert-warning text-center mt-3">
+            订单 <strong th:text="${orderNo}"></strong> 将在
+            <span id="countdown" style="color: #d63031; font-weight: bold; font-size: 1.2rem;">--:--</span>
+            后过期<br>
+            <small class="text-muted">超时将自动取消，请尽快支付</small>
+        </div>
+
+        <div class="mt-4">
+            <a th:href="@{/order/pay(orderNo=${orderNo})}" class="btn-edu">
+                立即支付
+            </a>
+
+            <div class="d-flex justify-content-between mt-2">
+                <a th:href="@{/order/my_orders}" class="btn-outline-secondary-edu">
+                    我再想想
+                </a>
+                <a th:href="@{/order/cancel(orderNo=${orderNo})}" class="btn-outline-danger-edu">
+                    取消订单
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+
+<script>
+    //完成用户订单倒计时功能
+    function startTimer() {
+        // 获取创建时间
+        var createTimeRaw = document.getElementById('createTime').value;
+        var createTime = parseInt(createTimeRaw)
+        // 获取订单号
+        var orderNo = document.getElementById('orderNo').value;
+        // 计算截止时间 (创建时间 + 15秒 方便答辩演示)
+        var expireTime = createTime + (15 * 1000);
+
+        // 用 setInterval 创建每秒执行一次的定时器
+        var timer = setInterval(function() {
+            // 获取当前浏览器时间的毫秒数
+            var now = new Date().getTime();
+            // 算出差值：截止时间 - 当前时间
+            var distance = expireTime - now;
+
+            // 情况A：已经超时
+            if (distance < 0) {
+                clearInterval(timer);
+                document.getElementById("countdown").innerHTML = "00:00";
+
+                alert("⏱️ 支付超时！您停留在页面的时间过长，订单 " + orderNo + " 已被系统自动释放。");
+
+                window.location.href = "/order/cancel?orderNo=" + orderNo;
+                return;
+            }
+
+            // 情况B：还没超时，计算分秒
+            var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            // 补零美化 (例如 9秒 变成 09)
+            minutes = minutes < 10 ? "0" + minutes : minutes;
+            seconds = seconds < 10 ? "0" + seconds : seconds;
+
+            document.getElementById("countdown").innerHTML = minutes + ":" + seconds;
+
+        }, 1000);
+    }
+
+    // 页面加载完立即执行
+    window.onload = startTimer;
+</script>
+</html>

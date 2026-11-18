@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>个人中心</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}">
+  <style>
+    /* === 莫兰迪基调 === */
+    :root {
+      --morandi-bg: #fdfcf8;
+      --morandi-text-main: #2d3748;
+      --morandi-text-sub: #718096;
+
+      /* 个人中心配色（与首页保持一致） */
+      --card-profile: #fffff0;     /* 极淡黄背景 */
+      --icon-profile: #beb162;     /* 暖黄色图标 */
+      --accent-profile: #bcaaa4;   /* 暖沙色点缀 */
+
+      /* 新增配色 */
+      --border-light: rgba(0,0,0,0.08);
+      --shadow-light: 0 4px 12px rgba(0,0,0,0.05);
+      --hover-shadow: 0 8px 25px rgba(0,0,0,0.08);
+    }
+
+    /* --- 核心修复：解决页面滑不下去的问题 --- */
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background-color: var(--morandi-bg);
+      /* 添加噪点纹理（与首页一致） */
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+      color: var(--morandi-text-main);
+      font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif;
+      line-height: 1.5;
+    }
+
+    body {
+      padding-bottom: 100px;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+
+    .profile-container {
+      max-width: 850px;
+      margin: 40px auto;
+      padding: 0 25px;
+    }
+
+    /* === 页面标题 === */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+    }
+
+    .page-header h2 {
+      margin: 0;
+      color: var(--morandi-text-main);
+      font-size: 1.9rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .page-header h2:before {
+      content: "👤";
+      font-size: 1.6rem;
+    }
+
+    .balance-display {
+      text-align: right;
+    }
+
+    .balance-label {
+      display: block;
+      color: var(--morandi-text-sub);
+      font-size: 0.9rem;
+      margin-bottom: 5px;
+    }
+
+    .balance-amount {
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: #c0392b;
+      font-family: 'Optima', sans-serif;
+    }
+
+    /* === 卡片设计：与首页风格一致 === */
+    .info-card {
+      background: white;
+      border-radius: 20px;
+      padding: 35px 30px;
+      box-shadow: var(--shadow-light);
+      margin-bottom: 25px;
+      border: 1px solid var(--border-light);
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .info-card:hover {
+      box-shadow: var(--hover-shadow);
+      transform: translateY(-3px);
+    }
+
+    /* 基本资料卡片 - 移除黄色背景，改为白色 */
+    .info-card.basic-info {
+      background: white;
+    }
+
+    /* 实名认证成功卡片 */
+    .info-card.verified-info {
+      background: #f8fdf9;
+      border-color: #e1f7e6;
+    }
+
+    /* 安全设置卡片 */
+    .info-card.security-settings {
+      background: white;
+    }
+
+    /* === 卡片标题 === */
+    .card-title {
+      font-size: 1.35rem;
+      margin-top: 0;
+      margin-bottom: 28px;
+      padding-left: 16px;
+      border-left: 5px solid var(--icon-profile);
+      color: var(--morandi-text-main);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* 实名认证标题特殊颜色 */
+    .verified-info .card-title {
+      border-left-color: #2ecc71;
+      color: #27ae60;
+    }
+
+    /* 安全设置标题 */
+    .security-settings .card-title {
+      border-left-color: #e67e22;
+    }
+
+    .card-subtitle {
+      font-size: 0.9rem;
+      font-weight: normal;
+      color: #999;
+      margin-left: 8px;
+    }
+
+    /* === 信息行样式 === */
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+    }
+
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .info-row.compact {
+      padding: 14px 0;
+    }
+
+    .info-label {
+      color: var(--morandi-text-sub);
+      font-size: 0.95rem;
+      font-weight: 500;
+      min-width: 120px;
+    }
+
+    .info-value {
+      font-weight: 600;
+      color: var(--morandi-text-main);
+      font-size: 1.05rem;
+    }
+
+    /* 余额特殊样式 */
+    .balance-value {
+      color: #c0392b;
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+
+    /* === 徽章样式 === */
+    /* 新增状态标签样式 */
+    .status-badge {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+    .st-wait { background: #e6f6ff; color: #0084ff; border: 1px solid #bce3ff; } /* 待接单 */
+    .st-expired { background: #fbeaea; color: #e02424; border: 1px solid #fbd5d5; } /* 已截止 */
+    .st-doing { background: #eefdf5; color: #0e9f6e; border: 1px solid #c6f6d5; } /* 进行中 */
+    .st-confirm { background: #fff8f1; color: #b45309; border: 1px solid #fde68a; } /* 待确认 */
+    .st-done { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; } /* 已完成 */
+
+    /* 列表里的删除按钮 */
+    .btn-mini-del {
+      font-size: 0.8rem;
+      padding: 4px 10px;
+      background: white;
+      color: #e02424;
+      border: 1px solid #fbd5d5;
+      border-radius: 6px;
+      margin-left: 10px;
+      text-decoration: none;
+      transition: all 0.3s;
+    }
+    .btn-mini-del:hover {
+      background: #e02424;
+      color: white;
+    }
+    .badge {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      display: inline-block;
+    }
+
+    .badge-success {
+      background: #e8f7ee;
+      color: #28a745;
+      border: 1px solid #d4edda;
+    }
+
+    .badge-warning {
+      background: #fff8e1;
+      color: #b76e00;
+      border: 1px solid #ffeeba;
+    }
+
+    /* 充值按钮样式 */
+    .recharge-btn {
+      background: var(--icon-profile);
+      color: #fff;
+      border: none;
+      padding: 9px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .recharge-btn:hover {
+      background: #e6c352;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(246, 224, 94, 0.3);
+    }
+
+    /* === 表单样式 === */
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 10px;
+      color: var(--morandi-text-sub);
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      box-sizing: border-box;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      background: white;
+      color: var(--morandi-text-main);
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--icon-profile);
+      box-shadow: 0 0 0 3px rgba(246, 224, 94, 0.15);
+    }
+
+    /* 充值框样式 */
+    #rechargeBox {
+      background: #f9f9f9;
+      padding: 24px;
+      border-radius: 12px;
+      margin-top: 20px;
+      border: 1px solid #eee;
+    }
+
+    .recharge-form {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .recharge-form .form-group {
+      margin-bottom: 0;
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .recharge-form .form-control {
+      width: 100%;
+    }
+
+    /* === 按钮样式 === */
+    .btn {
+      background: var(--icon-profile);
+      color: #fff;
+      border: none;
+      padding: 14px 28px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn:hover {
+      background: #e6c352;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(189, 195, 199, 0.3);
+    }
+
+    .btn-block {
+      width: 100%;
+    }
+
+    .btn-warning {
+      background: #e67e22;
+    }
+
+    .btn-warning:hover {
+      background: #d35400;
+    }
+
+    .btn-sm {
+      padding: 10px 20px;
+      font-size: 0.95rem;
+    }
+
+    /* === 返回按钮 === */
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 40px;
+      margin-bottom: 20px;
+      color: var(--morandi-text-sub);
+      text-decoration: none;
+      font-weight: 500;
+      padding: 12px 20px;
+      transition: all 0.3s ease;
+      border-radius: 8px;
+      background: white;
+      border: 1px solid rgba(0,0,0,0.08);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    }
+
+    .back-btn:hover {
+      color: var(--morandi-text-main);
+      gap: 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      transform: translateY(-2px);
+      background: #fafafa;
+    }
+
+    /* === 提示框 === */
+    .alert {
+      padding: 16px 20px;
+      margin-bottom: 30px;
+      border-radius: 12px;
+      font-weight: 500;
+      border: 1px solid transparent;
+    }
+
+    .alert-danger {
+      background: #fef2f2;
+      color: #991b1b;
+      border-color: #fecaca;
+    }
+
+    .alert-success {
+      background: #f0fdf4;
+      color: #166534;
+      border-color: #bbf7d0;
+    }
+
+    /* === 任务列表样式 === */
+    .task-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .task-item {
+      padding: 18px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s ease;
+    }
+
+    .task-item:hover {
+      background: rgba(0,0,0,0.02);
+      border-radius: 8px;
+      padding-left: 10px;
+      padding-right: 10px;
+      margin: 0 -10px;
+    }
+
+    .task-item:last-child {
+      border-bottom: none;
+    }
+
+    .task-info {
+      flex: 1;
+    }
+
+    .task-title {
+      font-weight: 600;
+      color: var(--morandi-text-main);
+      margin-bottom: 5px;
+    }
+
+    .task-status {
+      color: var(--morandi-text-sub);
+      font-size: 0.9rem;
+    }
+
+    .task-link {
+      color: var(--icon-profile);
+      text-decoration: none;
+      font-weight: 500;
+      padding: 8px 16px;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      background: rgba(246, 224, 94, 0.1);
+      border: 1px solid rgba(79, 73, 30, 0.2);
+    }
+
+    .task-link:hover {
+      background: rgba(246, 224, 94, 0.2);
+      text-decoration: none;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(246, 224, 94, 0.15);
+    }
+
+    /* === 表单网格布局 === */
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 25px;
+    }
+
+    /* === 空状态提示 === */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--morandi-text-sub);
+    }
+
+    .empty-state p {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    /* === 安全设置表单修复 === */
+    .security-form .form-row {
+      margin-top: 25px;
+    }
+
+    .security-form .btn {
+      margin-top: 10px;
+    }
+
+    /* === 响应式设计 === */
+    @media (max-width: 768px) {
+      .profile-container {
+        padding: 0 15px;
+        margin: 20px auto;
+      }
+
+      .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+      }
+
+      .balance-display {
+        text-align: left;
+      }
+
+      .form-row,
+      #rechargeBox .recharge-form {
+        grid-template-columns: 1fr;
+        gap: 15px;
+      }
+
+      .info-card {
+        padding: 25px 20px;
+      }
+
+      .info-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .info-label {
+        min-width: auto;
+      }
+
+      .task-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+      }
+
+      .task-link {
+        align-self: flex-end;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .page-header h2 {
+        font-size: 1.6rem;
+      }
+
+      .balance-amount {
+        font-size: 1.5rem;
+      }
+
+      .card-title {
+        font-size: 1.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="profile-container">
+  <div class="page-header">
+    <h2><span th:text="${user.username}">管理员</span> 的个人中心</h2>
+    <div class="balance-display">
+      <span class="balance-label">当前余额</span>
+      <div class="balance-amount">¥ <span th:text="${user.balance}">0.00</span></div>
+    </div>
+  </div>
+
+  <div th:if="${pwdError}" class="alert alert-danger" th:text="${pwdError}"></div>
+  <div th:if="${pwdSuccess}" class="alert alert-success" th:text="${pwdSuccess}"></div>
+  <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+  <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+
+  <div class="info-card basic-info">
+    <div class="card-title">基本资料</div>
+
+    <div class="info-row">
+      <span class="info-label">登录账号</span>
+      <span class="info-value" th:text="${user.username}">admin</span>
+    </div>
+
+    <div class="info-row">
+      <span class="info-label">账户余额</span>
+      <div style="display: flex; align-items: center; gap: 20px;">
+        <span class="balance-value">
+          ¥<span th:text="${user.balance}">0.00</span>
+        </span>
+        <button type="button" onclick="toggleRecharge()" class="recharge-btn">
+          <i class="fa fa-plus-circle"></i> 充值
+        </button>
+      </div>
+    </div>
+
+    <div id="rechargeBox" style="display: none;">
+      <form action="/user/recharge" method="post" class="recharge-form">
+        <div class="form-group">
+          <label>充值金额</label>
+          <input type="number" name="amount" step="0.01" min="0.01" required
+                 placeholder="0.00" class="form-control">
+        </div>
+        <button type="submit" class="btn btn-sm">确认支付</button>
+      </form>
+    </div>
+
+    <div class="info-row compact">
+      <span class="info-label">认证状态</span>
+      <span>
+        <span th:if="${user.isVerified == 1}" class="badge badge-success">✅ 已实名认证</span>
+        <span th:if="${user.isVerified == 0}" class="badge badge-warning">⚠️ 未实名认证</span>
+      </span>
+    </div>
+
+    <form action="/user/updateInfo" method="post" style="margin-top: 10px;">
+      <div class="info-row" style="border: none; padding-bottom: 0;">
+        <span class="info-label">用户昵称</span>
+        <div style="display: flex; gap: 15px; align-items: center;">
+          <input type="text" name="nickname" th:value="${user.nickname}" required
+                 placeholder="设置一个昵称" class="form-control" style="width: 200px;">
+          <button type="submit" class="btn btn-sm">修改昵称</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="info-card verified-info" th:if="${user.isVerified == 1}">
+    <div class="card-title">🎉 实名信息</div>
+    <div class="info-row">
+      <span class="info-label">真实姓名</span>
+      <span class="info-value" th:text="${user.realName}">张三</span>
+    </div>
+    <div class="info-row" style="border: none;">
+      <span class="info-label">学号</span>
+      <span class="info-value" th:text="${user.studentNo}">2021001</span>
+    </div>
+  </div>
+
+  <div class="info-card" th:if="${user.isVerified == 0}">
+    <div class="card-title">🚀 实名认证 <span class="card-subtitle">(认证后开启抢单功能)</span></div>
+    <form id="verifyForm">
+      <div class="form-row">
+        <div class="form-group">
+          <label>真实姓名</label>
+          <input type="text" name="realName" placeholder="请输入真实姓名" required class="form-control">
+        </div>
+        <div class="form-group">
+          <label>学号</label>
+          <input type="text" name="studentNo" placeholder="请输入学号" required class="form-control">
+        </div>
+      </div>
+      <button type="submit" class="btn btn-block">立即认证</button>
+    </form>
+  </div>
+
+  <div class="info-card security-settings">
+    <div class="card-title">🔐 安全设置</div>
+    <form action="/user/updatePwd" method="post" class="security-form">
+      <div class="form-group">
+        <label>原密码</label>
+        <input type="password" name="oldPassword" placeholder="请输入当前密码" required class="form-control">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>新密码</label>
+          <input type="password" name="newPassword" placeholder="请输入新密码" required class="form-control">
+        </div>
+        <div class="form-group">
+          <label>确认密码</label>
+          <input type="password" name="confirmPassword" placeholder="请再次输入新密码" required class="form-control">
+        </div>
+      </div>
+      <button type="submit" class="btn btn-warning btn-block">修改密码</button>
+    </form>
+  </div>
+
+  <div class="info-card">
+    <div class="card-title">📤 我发布的任务</div>
+    <div th:if="${#lists.isEmpty(publishList)}" class="empty-state">
+      <p>暂无发布的任务</p>
+    </div>
+    <ul class="task-list" th:unless="${#lists.isEmpty(publishList)}">
+      <li class="task-item" th:each="task : ${publishList}">
+        <div class="task-info">
+          <div class="task-title" th:text="${task.title}">任务标题</div>
+
+          <div style="margin-top: 5px;">
+            <span th:if="${task.status == 0 and !task.expired}" class="badge" style="background: #e3f2fd; color: #3182ce; padding: 5px 10px; border-radius: 20px; font-size: 0.85rem;">
+                <i class="fa fa-hourglass-start"></i> 待接单
+            </span>
+
+            <span th:if="${task.status == -1 or (task.status == 0 and task.expired)}" class="badge" style="background: #f1f5f9; color: #94a3b8; padding: 5px 10px; border-radius: 20px; font-size: 0.85rem;">
+                <i class="fa fa-times-circle"></i> 已过期
+            </span>
+
+            <span th:if="${task.status == 1}" class="badge" style="background: #eafaf1; color: #38a169; padding: 5px 10px; border-radius: 20px; font-size: 0.85rem;">
+                <i class="fa fa-bicycle"></i> 进行中
+            </span>
+
+            <span th:if="${task.status == 2}" class="badge" style="background: #fffaf0; color: #dd6b20; padding: 5px 10px; border-radius: 20px; font-size: 0.85rem;">
+                <i class="fa fa-check-circle-o"></i> 待验收
+            </span>
+
+            <span th:if="${task.status == 3}" class="badge" style="background: #f1f5f9; color: #718096; padding: 5px 10px; border-radius: 20px; font-size: 0.85rem;">
+                <i class="fa fa-check"></i> 已完成
+            </span>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center;">
+          <form th:if="${task.status == 0 and task.expired}"
+                th:action="@{/task/delete}" method="post"
+                onsubmit="return confirm('任务已截止且无人接单，确认删除并退回赏金吗？')">
+            <input type="hidden" name="taskId" th:value="${task.id}">
+            <button type="submit" class="btn-mini-del">删除退款</button>
+          </form>
+
+          <a th:href="@{/task/detail(taskId=${task.id})}" class="task-link" style="margin-left: 10px;">详情</a>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="info-card">
+    <div class="card-title">📥 我接取的任务</div>
+    <div th:if="${#lists.isEmpty(takeList)}" class="empty-state">
+      <p>暂无接取的任务</p>
+    </div>
+    <ul class="task-list" th:unless="${#lists.isEmpty(takeList)}">
+      <li class="task-item" th:each="task : ${takeList}">
+        <div class="task-info">
+          <div class="task-title" th:text="${task.title}">任务标题</div>
+
+          <div class="task-status" style="margin-top: 8px;">
+             <span th:if="${task.status == 1}" class="status-badge st-doing">
+               🏃 进行中
+            </span>
+            <span th:if="${task.status == 2}" class="status-badge st-confirm">
+               ⏳ 已提交 (待验收)
+            </span>
+            <span th:if="${task.status == 3}" class="status-badge st-done">
+               ✅ 已完成
+            </span>
+          </div>
+        </div>
+        <a th:href="@{/task/detail(taskId=${task.id})}" class="task-link">查看详情</a>
+      </li>
+    </ul>
+  </div>
+
+  <a th:href="@{/}" class="back-btn">
+    <i class="fa fa-arrow-left"></i> 返回校园服务大厅
+  </a>
+</div>
+
+<script>
+  // 实名认证 AJAX
+  const verifyForm = document.getElementById("verifyForm");
+  if (verifyForm) {
+    verifyForm.addEventListener("submit", function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+
+      fetch('/user/verify', {
+        method: 'POST',
+        body: formData
+      })
+              .then(res => res.json())          // 关键：先解析 JSON
+              .then(data => {
+                if (data.code === "200") {      // 根据你 Result 类的成功码判断
+                  alert("认证成功！");
+                  window.location.reload();
+                } else {
+                  alert("认证失败：" + (data.msg || "未知错误"));
+                }
+              })
+              .catch(err => {
+                alert("网络请求失败：" + err.message);
+              });
+    });
+  }
+
+  function toggleRecharge() {
+    var box = document.getElementById("rechargeBox");
+    if (box.style.display === "none" || box.style.display === "") {
+      box.style.display = "block";
+    } else {
+      box.style.display = "none";
+    }
+  }
+</script>
+</body>
+</html>

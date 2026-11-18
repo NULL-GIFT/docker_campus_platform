@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>登录 - 校园互助平台</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div class="main-wrapper">
+    <div class="left-panel">
+        <div class="brand-text">
+            <h1>CAMPUS LIFE</h1>
+            <p>连接你我 · 闲置交易 · 互助跑腿</p>
+        </div>
+    </div>
+
+    <div class="right-panel">
+        <div class="form-container">
+            <div class="form-title">账号登录</div>
+
+            <form id="loginForm">
+                <div class="input-group">
+                    <label>用户名</label>
+                    <input type="text" name="username" placeholder="请输入学号/用户名" required>
+                </div>
+
+                <div class="input-group">
+                    <label>密码</label>
+                    <input type="password" name="password" placeholder="请输入密码" required>
+                </div>
+
+                <div class="input-group">
+                    <label>验证码</label>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="text" name="inputCode" placeholder="输入验证码" required style="flex: 1;">
+                        <img id="captchaImg" src="" alt="验证码" style="cursor: pointer; height: 40px; border: 1px solid #ddd; border-radius: 4px;" onclick="refreshCaptcha()">
+                    </div>
+                </div>
+
+                <input type="hidden" name="token" id="captchaToken">
+                <button type="submit" class="btn btn-primary">立即登录</button>
+            </form>
+
+            <div class="links">
+                <span>还没有账号？</span>
+                <a th:href="@{/auth/register}">去注册一个</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/js/script.js}"></script>
+<script>
+    // 定义刷新验证码的函数
+    function refreshCaptcha() {
+        fetch('/auth/captcha')
+            .then(res => res.json())
+            .then(res => {
+                if (res.code === "200") {
+                    //把图片塞进 img 标签
+                    document.getElementById("captchaImg").src = res.data.img;
+                    // 把 token 塞进隐藏的 input 标签，这样 FormData 就能自动打包带走了
+                    document.getElementById("captchaToken").value = res.data.token;
+                }
+            });
+    }
+
+    // 页面一加载就先请求一次验证码
+    window.onload = function() {
+        refreshCaptcha();
+    }
+    document.getElementById("loginForm").addEventListener("submit", function(event) {
+        event.preventDefault();// 阻止表单默认提交，改用JS提交
+        const formData = new FormData(this);// 自动把input里的name和value打包
+        fetch('/auth/login', {
+            method: 'POST',
+            // // 把打包好的数据放在请求体里发出去
+            body: formData
+        })
+            .then(response => response.json())
+            .then(res => {
+                if (res.code === "200") {
+                    // 登录成功
+                    document.querySelector('.btn-primary').innerText = "🚀 登录成功，跳转中...";
+                    document.querySelector('.btn-primary').style.background = "#28a745";
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 800);
+                } else {
+                    // 登录失败
+                    //不管是因为密码错还是验证码错，失败了就自动刷张新的
+                    refreshCaptcha();
+                    // 如果是因为"用户不存在"，直接跳去注册
+                    if (res.msg.includes("用户不存在")) {
+                        if(confirm("账号不存在，是否立即去注册？")) {
+                            window.location.href = '/auth/register';
+                        }
+                    } else {
+                        // 其他错误，弹窗提醒
+                        alert("登录失败: " + res.msg);
+                    }
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    });
+</script>
+</body>
+</html>

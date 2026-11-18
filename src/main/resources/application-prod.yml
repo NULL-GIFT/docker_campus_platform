@@ -1,0 +1,30 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  # 生产环境开启Thymeleaf缓存，避免每次请求都进行磁盘IO渲染
+  thymeleaf:
+    cache: true
+    mode: HTML
+    # 把所有登录Session全部扔进Redis
+  session:
+    store-type: redis
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    #环境变量占位符
+    url: jdbc:mysql://${SPRING_DATASOURCE_URL}/campus_platform?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST}
+      port: 6379
+      password: ${SPRING_DATA_REDIS_PASSWORD}
+
+file:
+  #K8sPVC持久化卷的内网绝对挂载路径
+  upload-dir: /app/data/upload/

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.campus_platform.mapper.AdminMapper">
+
+<!--    统计user表里所有的行数-->
+    <select id="countTotalUsers" resultType="int">
+        SELECT COUNT(*) FROM user
+    </select>
+<!--    统计待领取和进行中且未被删除的业务-->
+    <select id="countActiveTasks" resultType="int">
+        SELECT COUNT(*) FROM task WHERE status IN (0, 1) AND is_deleted = 0
+    </select>
+<!--    IFNULL(SUM(amount), 0)如果数据库里一条订单都没有，SUM(amount)会返回NULL -->
+<!--    只统计已完成和已支付的订单-->
+    <select id="sumTotalAmount" resultType="java.math.BigDecimal">
+        SELECT IFNULL(SUM(amount), 0) FROM order_info WHERE status IN (1, 2)
+    </select>
+
+
+<!--   近七天用户增长 -->
+<!--    获取当前时间往前推7天的时间点，WHERE子句筛选出这7天内注册的用户。-->
+<!--    COUNT(*) as count 算出每一组（每一天）有多少人-->
+<!--    DATE_FORMAT(create_time, '%m-%d')格式化日期-->
+<!--    GROUP BY按照“月-日”进行分组。同一天注册的人会被归为一组-->
+    <select id="countUserTrend" resultType="map">
+        SELECT DATE_FORMAT(create_time, '%m-%d') as dateStr, COUNT(*) as count
+        FROM user WHERE create_time >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        GROUP BY DATE_FORMAT(create_time, '%m-%d') ORDER BY dateStr ASC
+    </select>
+
+
+
+<!--    关联子查询和动态sql-->
+<!--    下面这四行是子查询，用来统计每个用户的信息-->
+    <select id="findAll" resultType="com.campus_platform.entity.User">
+        SELECT
+            u.*,
+            -- 统计发布了多少任务
+            (SELECT COUNT(*) FROM task t WHERE t.publisher_id = u.id) AS publishedTaskCount,
+            -- 统计接受了多少任务
+            (SELECT COUNT(*) FROM task t WHERE t.taker_id = u.id) AS takenTaskCount,
+            -- 统计发布了多少商品 (item 表 seller_id)
+            (SELECT COUNT(*) FROM item i WHERE i.seller_id = u.id) AS itemSoldCount,
+            -- 统计买了多少东西 (order_info 表 buyer_id)
+            (SELECT COUNT(*) FROM order_info o WHERE o.buyer_id = u.id) AS itemBoughtCount
+        FROM user u
+        <where>
+            <if test="status != null">
+                AND u.status = #{status}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (u.username LIKE CONCAT('%', #{keyword}, '%')
+                OR u.real_name LIKE CONCAT('%', #{keyword}, '%')
+                OR u.nickname LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+        ORDER BY u.create_time DESC
+    </select>
+
+
+    <insert id="insertLog" parameterType="com.campus_platform.entity.SysLog">
+        INSERT INTO sys_log (operator_id, operator_name, type, content, create_time)
+        VALUES (#{operatorId}, #{operatorName}, #{type}, #{content}, NOW())
+    </insert>
+
+    <select id="selectAllLogs" resultType="com.campus_platform.entity.SysLog">
+        SELECT * FROM sys_log
+        <where>
+            <if test="type != null and type != ''">
+                AND type = #{type}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+
+    <update id="updateStatus">
+        UPDATE user
+        SET status = #{status}, update_time = NOW()
+        WHERE id = #{userId}
+    </update>
+
+
+
+</mapper>

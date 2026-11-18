@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>发布商品</title>
+    <style>
+        :root {
+            --page-bg: #fdf6f9;          /* 页面背景 - 浅粉色 */
+            --card-pink: #f9f0f3;        /* 卡片背景 - 淡粉色 */
+            --icon-pink: #f0c6d0;    /* 改为更亮的粉色 */
+            --primary-pink: #e8b4bc;   /* 主要粉色 */
+            --border-pink: #e8c7d4;      /* 边框粉色 */
+            --text-primary: #5a4a4f;     /* 主要文字颜色 */
+            --text-secondary: #8a7a83;   /* 次要文字颜色 */
+        }
+
+        body {
+            padding: 20px;
+            font-family: 'Segoe UI', 'PingFang SC', sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: var(--page-bg);
+            color: var(--text-primary);
+        }
+
+        .error {
+            color: #c44569; /* 保持原错误色 */
+            padding: 12px;
+            background: #ffeef5;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #c44569;
+        }
+
+        .success {
+            color: #28a745; /* 保持原成功绿色 */
+            padding: 12px;
+            background: #f0f9f5;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #28a745;
+        }
+
+        .form-group {
+            margin: 20px 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 15px;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-pink);
+            border-radius: 8px;
+            font-size: 15px;
+            box-sizing: border-box;
+            background: white;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-pink);
+            box-shadow: 0 0 0 3px rgba(216, 167, 177, 0.2);
+        }
+
+        .button {
+            padding: 12px 24px;
+            background: var(--primary-pink);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            margin-right: 12px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(216, 167, 177, 0.2);
+            text-decoration: none; /* 添加这行：移除下划线 */
+            display: inline-block; /* 添加这行：保持按钮样式 */
+        }
+
+        .button:hover {
+            background: #c895a0;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(216, 167, 177, 0.3);
+            text-decoration: none; /* 添加这行：确保悬停时也无下划线 */
+        }
+
+        .button-secondary {
+            background: #6c757d; /* 保持原灰色 */
+        }
+
+        .button-secondary:hover {
+            background: #5a6268; /* 保持原深灰色 */
+        }
+
+        .form-hint {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+            margin-left: 5px;
+        }
+
+        .required::after {
+            content: " *";
+            color: #c44569; /* 保持原红色 */
+            font-weight: bold;
+        }
+
+        .image-preview {
+            margin-top: 15px;
+            max-width: 200px;
+            border: 2px dashed var(--border-pink);
+            border-radius: 8px;
+            padding: 10px;
+            display: none;
+            background: white;
+        }
+
+        h1 {
+            color: var(--text-primary);
+            margin-bottom: 25px;
+            font-weight: 600;
+            border-bottom: 2px solid var(--border-pink);
+            padding-bottom: 15px;
+        }
+
+        /* 确保所有链接样式的按钮都没有下划线 */
+        a.button, a.button:hover, a.button:focus, a.button:active {
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+<h1>发布商品</h1>
+
+<a href="/market/list" class="button button-secondary"> 返回商品列表</a>
+
+<div style="margin: 25px 0;"></div>
+
+<div th:if="${error}" class="error">
+    <p th:text="${error}"></p>
+</div>
+
+<div th:if="${success}" class="success">
+    <p th:text="${success}"></p>
+</div>
+
+<form action="/market/publish" method="post" enctype="multipart/form-data" id="publishForm">
+    <div class="form-group">
+        <label class="required">商品名称</label>
+        <input type="text" name="title" required placeholder="请输入商品名称，如：二手书">
+    </div>
+
+    <div class="form-group">
+        <label>商品描述</label>
+        <textarea name="description" rows="4" placeholder="请详细描述商品信息，如：品牌、型号、使用情况等"></textarea>
+    </div>
+
+    <div class="form-group">
+        <label class="required">价格</label>
+        <input type="number" name="price" step="0.01" min="0.01" required placeholder="0.00">
+        <div class="form-hint">单位：元</div>
+    </div>
+
+    <div class="form-group">
+        <label>商品图片</label>
+        <input type="file" name="image" accept="image/*" id="imageInput">
+        <div class="form-hint">支持JPG、PNG格式，最大5MB（选填）</div>
+
+        <!-- 图片预览 -->
+        <img id="imagePreview" class="image-preview" alt="图片预览">
+    </div>
+
+    <div class="form-group">
+        <button type="submit" class="button">发布商品</button>
+        <button type="button" class="button button-secondary" onclick="clearForm()">清空表单</button>
+    </div>
+</form>
+
+<script>
+    // 图片预览功能
+    document.getElementById('imageInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];// 获取用户选择的第一个文件
+        const preview = document.getElementById('imagePreview');
+
+        if (file) {
+            const reader = new FileReader();
+            // 当文件读取完成时执行
+            reader.onload = function(e) {
+                preview.src = e.target.result;// 将图片数据设置为预览图的src
+                preview.style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+        } else {
+            preview.style.display = 'none';
+        }
+    });
+
+    // 清空表单功能
+    function clearForm() {
+        document.getElementById('publishForm').reset();
+        document.getElementById('imagePreview').style.display = 'none';
+    }
+
+    // 表单提交验证
+    document.getElementById('publishForm').addEventListener('submit', function(e) {
+        const title = document.querySelector('input[name="title"]').value.trim();
+        const price = document.querySelector('input[name="price"]').value;
+
+        if (!title) {
+            alert('请填写商品名称');
+            e.preventDefault();
+            return;
+        }
+
+        if (!price || parseFloat(price) <= 0) {
+            alert('请输入有效的价格');
+            e.preventDefault();
+            return;
+        }
+
+        // 验证图片大小（可选）
+        const fileInput = document.getElementById('imageInput');
+        if (fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            if (file.size > 5 * 1024 * 1024) { // 5MB限制
+                alert('图片大小不能超过5MB');
+                e.preventDefault();
+                return;
+            }
+        }
+
+        // 可以添加一个加载提示
+        const submitBtn = this.querySelector('button[type="submit"]');
+        submitBtn.innerHTML = '发布中...';
+        submitBtn.disabled = true;
+    });
+</script>
+</body>
+</html>

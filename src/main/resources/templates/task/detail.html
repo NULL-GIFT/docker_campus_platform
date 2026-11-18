@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任务详情</title>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <style>
+        /* === 1. 莫兰迪配色升级版 (字体颜色加深，对比度更高) === */
+        :root {
+            --bg-body: #f8fafc;
+            --text-main: #1a202c; /* 更黑一点，防字太淡 */
+            --text-sub: #718096;
+
+            /* 你的主色调：浅蓝 */
+            --theme-blue-bg: #ebf8ff;      /* 极浅蓝背景 */
+            --theme-blue-light: #bee3f8;   /* 装饰蓝 */
+            --theme-blue-main: #4299e1;    /* 核心蓝 */
+            --theme-blue-dark: #2b6cb0;    /* 深蓝按钮 */
+
+            /* 价格红 */
+            --price-red: #e53e3e;
+
+            /* 阴影与圆角 */
+            --card-radius: 20px;
+            --card-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.01);
+        }
+
+        body {
+            margin: 0; padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background-color: var(--bg-body);
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px; /* 稍微加宽一点 */
+        }
+
+        /* === 2. 大气卡片设计 === */
+        .main-card {
+            background: #fff;
+            border-radius: var(--card-radius);
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 顶部通栏：浅蓝色渐变背景 */
+        .card-header {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f0f9ff 100%);
+            padding: 40px 50px; /* 加大内边距 */
+            border-bottom: 1px solid rgba(255,255,255,0.5);
+            position: relative;
+        }
+
+        /* 状态标签 (胶囊样式) */
+        .status-pill {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 18px;
+            border-radius: 50px;
+            font-size: 0.95rem; /* 字号加大 */
+            font-weight: 700;
+            background: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        /* 不同状态的颜色 */
+        .status-wait { color: #3182ce; }
+        .status-doing { color: #38a169; }
+        .status-end { color: #e53e3e; }
+        .status-done { color: #718096; }
+
+        /* 标题与价格布局 */
+        .header-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        .task-title {
+            font-size: 2rem; /* 32px 大标题 */
+            font-weight: 800;
+            line-height: 1.3;
+            color: #2d3748;
+            margin: 0;
+            flex: 1;
+        }
+
+        .price-box {
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .price-label { font-size: 0.9rem; color: #718096; display: block; margin-bottom: 4px; }
+        .price-num {
+            font-family: 'Helvetica Neue', sans-serif;
+            font-size: 2.8rem; /* 超大价格 */
+            font-weight: 700;
+            color: var(--price-red);
+            line-height: 1;
+        }
+        .price-symbol { font-size: 1.5rem; vertical-align: super; margin-right: 4px; }
+
+        /* 发布者与时间信息 */
+        .meta-row {
+            margin-top: 25px;
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            color: #555;
+            font-size: 1rem; /* 字号加大 */
+        }
+        .meta-item { display: flex; align-items: center; gap: 8px; }
+        .meta-item i { color: var(--theme-blue-main); opacity: 0.8; }
+
+        /* === 3. 内容区域 (大字版) === */
+        .card-body {
+            padding: 50px;
+        }
+
+        .section-label {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 15px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .section-label::before {
+            content: ''; width: 6px; height: 24px;
+            background: var(--theme-blue-main);
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .content-text {
+            font-size: 1.15rem; /* 18px 正文 */
+            line-height: 1.8;   /* 宽松行高 */
+            color: #4a5568;
+            background: #fafbfc;
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px dashed #e2e8f0;
+        }
+
+        /* === 4. 底部按钮栏 (更大更显眼) === */
+        .action-bar {
+            background: #fff;
+            padding: 30px 50px 50px; /* 底部多留白 */
+            border-top: 1px solid #f7fafc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 按钮样式升级 */
+        .btn-big {
+            padding: 14px 32px; /* 更大的按钮内边距 */
+            border-radius: 12px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex; align-items: center; gap: 10px;
+        }
+
+        /* 返回按钮 */
+        .btn-back {
+            color: #718096; background: #f1f5f9;
+        }
+        .btn-back:hover { background: #e2e8f0; color: #2d3748; }
+
+        /* 主操作按钮 (蓝色) */
+        .btn-blue {
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+            color: white;
+            box-shadow: 0 10px 20px -5px rgba(66, 153, 225, 0.4);
+        }
+        .btn-blue:hover { transform: translateY(-3px); box-shadow: 0 15px 25px -5px rgba(66, 153, 225, 0.5); }
+
+        /* 绿色按钮 (完成) */
+        .btn-green {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            box-shadow: 0 10px 20px -5px rgba(72, 187, 120, 0.4);
+        }
+        .btn-green:hover { transform: translateY(-3px); }
+
+        /* 删除按钮 (红色幽灵) */
+        .btn-del {
+            color: #e53e3e; background: #fff5f5;
+        }
+        .btn-del:hover { background: #fed7d7; }
+
+        .right-group { display: flex; gap: 15px; align-items: center; }
+
+        @media (max-width: 600px) {
+            .card-header, .card-body, .action-bar { padding: 30px 20px; }
+            .header-main { flex-direction: column-reverse; gap: 10px; }
+            .price-box { text-align: left; }
+            .action-bar { flex-direction: column-reverse; gap: 20px; }
+            .right-group, .btn-big { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="main-card">
+
+        <div class="card-header">
+            <div th:if="${task.status == -1}" class="status-pill status-end">
+                <i class="fa fa-times-circle"></i> 已过期 (赏金已退回钱包)
+            </div>
+            <div th:if="${task.status == 0 and !task.expired}" class="status-pill status-wait">
+                <i class="fa fa-hourglass-start"></i> 等待接单
+            </div>
+            <div th:if="${task.status == 0 and task.expired}" class="status-pill status-end">
+                <i class="fa fa-times-circle"></i> 已过期
+            </div>
+            <div th:if="${task.status == 1}" class="status-pill status-doing">
+                <i class="fa fa-bicycle"></i> 任务进行中
+            </div>
+            <div th:if="${task.status == 2}" class="status-pill status-wait">
+                <i class="fa fa-check-circle-o"></i> 待发布者验收
+            </div>
+            <div th:if="${task.status == 3}" class="status-pill status-done">
+                <i class="fa fa-check"></i> 任务已完成
+            </div>
+
+            <div class="header-main">
+                <h1 class="task-title" th:text="${task.title}">任务标题在这里显示，字号很大</h1>
+                <div class="price-box">
+                    <span class="price-label">赏金 Reward</span>
+                    <div class="price-num">
+                        <span class="price-symbol">¥</span><span th:text="${task.reward}">50</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="meta-row">
+                <div class="meta-item">
+                    <i class="fa fa-user-circle"></i>
+                    <span th:text="${task.publisherNickname}">发布者姓名</span>
+                </div>
+                <div class="meta-item">
+                    <i class="fa fa-clock-o"></i>
+                    <span>截止: <span th:text="${#temporals.format(task.deadline, 'MM-dd HH:mm')}">12-24 12:00</span></span>
+                </div>
+                <div class="meta-item" th:if="${task.takerId != null}">
+                    <i class="fa fa-handshake-o"></i>
+                    <span>接单人: <span th:text="${task.takerRealName}">李四</span></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="section-label">任务详情 Description</div>
+            <div class="content-text" th:text="${task.content}">
+                这里是具体的任务描述。把字号调整到了18px（1.15rem），行高调整到了1.8，这样读起来非常舒服，不会觉得密密麻麻。
+                背景加了一个极淡的灰色框，让文字区域更聚焦。
+            </div>
+        </div>
+
+        <div class="action-bar">
+            <a th:href="@{/task/list}" class="btn-big btn-back">
+                <i class="fa fa-arrow-left"></i> 返回
+            </a>
+
+            <div class="right-group">
+                <th:block th:if="${task.publisherId == session.user.id}">
+                    <th:block th:if="${task.status == 0}">
+                        <form th:action="@{/task/delete}" method="post" onsubmit="return confirm('确定删除？')">
+                            <input type="hidden" name="taskId" th:value="${task.id}">
+                            <button type="submit" class="btn-big btn-del">
+                                <i class="fa fa-trash-o"></i> 删除
+                            </button>
+                        </form>
+                        <a th:href="@{/task/edit(taskId=${task.id})}" class="btn-big btn-back">
+                            <i class="fa fa-pencil"></i> 修改
+                        </a>
+                    </th:block>
+
+                    <span th:if="${task.status == 1}" style="color:#718096; font-weight:500;">
+                        等待对方完成...
+                    </span>
+
+                    <form th:if="${task.status == 2}" th:action="@{/task/confirm}" method="post">
+                        <input type="hidden" name="taskId" th:value="${task.id}">
+                        <button type="submit" class="btn-big btn-green">
+                            <i class="fa fa-check"></i> 确认验收支付
+                        </button>
+                    </form>
+                </th:block>
+
+                <th:block th:if="${task.takerId == session.user.id}">
+                    <form th:if="${task.status == 1}" th:action="@{/task/finish}" method="post">
+                        <input type="hidden" name="taskId" th:value="${task.id}">
+                        <button type="submit" class="btn-big btn-blue">
+                            <i class="fa fa-paper-plane"></i> 我已完成
+                        </button>
+                    </form>
+                    <span th:if="${task.status == 2}" class="btn-big btn-back" style="cursor:default">
+                        <i class="fa fa-hourglass-half"></i> 等待验收
+                    </span>
+                </th:block>
+
+                <th:block th:if="${task.publisherId != session.user.id and task.takerId == null}">
+                    <form th:if="${task.status == 0 and !task.expired}" th:action="@{/task/take}" method="post">
+                        <input type="hidden" name="taskId" th:value="${task.id}">
+                        <button type="submit" class="btn-big btn-blue">
+                            <i class="fa fa-bolt"></i> 立即抢单
+                        </button>
+                    </form>
+                    <span th:if="${task.status == 0 and task.expired}" style="color:#cbd5e0;">
+                        来晚了，任务已过期
+                    </span>
+                </th:block>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script th:inline="javascript">
+    var errorMsg = [[${errorMsg}]];
+    if (errorMsg) alert(errorMsg);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.campus_platform.mapper.TaskMapper">
+    <select id="selectAvailableTasks" resultType="com.campus_platform.entity.Task">
+        SELECT
+        id, title, content, reward, deadline, status, publisher_id AS publisherId, create_time AS createTime
+        FROM task
+        WHERE status = 0
+        AND is_deleted = 0
+        AND deadline > NOW()  ORDER BY create_time DESC
+    </select>
+
+    <insert id="insertTask"
+            parameterType="com.campus_platform.entity.Task"
+            useGeneratedKeys="true"
+            keyProperty="id">
+
+        INSERT INTO task (
+        title,
+        content,
+        reward,
+        deadline,
+        status,
+        publisher_id,
+        create_time,
+        update_time,
+        is_deleted
+        ) VALUES (
+        #{title},
+        #{content},
+        #{reward},
+        #{deadline},
+        #{status},
+        #{publisherId},
+        NOW(),
+        NOW(),
+        0
+        )
+
+    </insert>
+
+    <select id="selectById" resultType="com.campus_platform.entity.Task">
+        SELECT
+        t.id,
+        t.title,
+        t.content,
+        t.reward,
+        t.deadline,
+        t.status,
+        t.create_time,
+        t.update_time,
+        t.is_deleted,
+        t.version,
+        t.publisher_id AS publisherId,
+        t.taker_id AS takerId,
+        u_pub.nickname as publisher_nickname,
+        u_taker.real_name as taker_real_name
+        FROM task t
+        LEFT JOIN user u_pub ON t.publisher_id = u_pub.id
+        LEFT JOIN user u_taker ON t.taker_id = u_taker.id
+        WHERE t.id = #{taskId}
+        AND t.is_deleted = 0
+    </select>
+
+
+    <update id="takeTask">
+        UPDATE task
+        SET
+            taker_id = #{takerId},
+            take_time = NOW(),
+            status = 1,
+            version = version + 1,
+            update_time = NOW()
+        WHERE id = #{taskId}
+        AND status = 0
+        AND is_deleted = 0
+        AND version = #{version}
+    </update>
+
+    <!-- 接单人完成任务 -->
+    <update id="finishTask">
+        UPDATE task
+        SET status = 2,
+        update_time = NOW()
+        WHERE id = #{taskId}
+        AND taker_id = #{takerId}
+        AND status = 1
+        AND is_deleted = 0
+    </update>
+
+    <!-- 发布者确认完成 -->
+    <update id="confirmTask">
+        UPDATE task
+        SET status = 3,
+        update_time = NOW()
+        WHERE id = #{taskId}
+        AND publisher_id = #{publisherId}
+        AND status = 2
+        AND is_deleted = 0
+    </update>
+
+
+    <select id="selectByPublisher" parameterType="long" resultType="com.campus_platform.entity.Task">
+        SELECT
+        id,
+        title,
+        content,          <!-- 加上这一行 -->
+        reward,
+        status,
+        deadline,
+        taker_id AS takerId,
+        create_time AS createTime
+        FROM task
+        WHERE publisher_id = #{publisherId}
+        AND is_deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectByTaker"
+            parameterType="long"
+            resultType="com.campus_platform.entity.Task">
+        SELECT
+        id,
+        title,
+        reward,
+        status,
+        deadline,
+        publisher_id AS publisherId,
+        create_time AS createTime
+        FROM task
+        WHERE taker_id = #{takerId}
+        AND is_deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <update id="updateTask">
+        UPDATE task
+        SET title = #{title},
+            content = #{content},
+            deadline = #{deadline},
+            update_time = NOW()
+        WHERE id = #{id}
+        AND publisher_id = #{publisherId}
+        AND status = 0
+    </update>
+
+
+
+
+<!--       新增：管理员  -->
+    <update id="deleteByAdmin">
+        UPDATE task
+        SET is_deleted = 1,
+        update_time = NOW()
+        WHERE id = #{taskId}
+    </update>
+    <select id="adminFindAll" resultType="com.campus_platform.entity.Task">
+        SELECT
+        t.*,
+        u1.nickname AS publisherNickname,
+        u2.real_name AS takerRealName
+        FROM task t
+        LEFT JOIN user u1 ON t.publisher_id = u1.id
+        LEFT JOIN user u2 ON t.taker_id = u2.id
+        <where>
+            <if test="status != null">
+                <choose>
+                    <when test="status == 1"> AND t.status IN (1, 2)
+                    </when>
+                    <otherwise>
+                        AND t.status = #{status}
+                    </otherwise>
+                </choose>
+            </if>
+        </where>
+        ORDER BY t.create_time DESC
+    </select>
+
+
+    <select id="selectTimeoutTasks" resultType="com.campus_platform.entity.Task">
+        SELECT * FROM task
+        WHERE status = 0 AND is_deleted = 0 AND deadline &lt; NOW()
+    </select>
+
+    <update id="updateStatusToExpired">
+        UPDATE task
+        SET status = -1, update_time = NOW()
+        WHERE id = #{taskId} AND status = 0 AND is_deleted = 0
+    </update>
+
+    <update id="deleteTask">
+        UPDATE task
+        SET is_deleted = 1, update_time = NOW()
+        WHERE id = #{taskId} AND publisher_id = #{publisherId} AND status IN (0, -1)
+    </update>
+
+    <update id="deleteTaskWithStatus">
+        UPDATE task
+        SET is_deleted = 1, update_time = NOW()
+        WHERE id = #{taskId}
+        AND publisher_id = #{publisherId}
+        AND status = #{status}
+    </update>
+
+
+</mapper>

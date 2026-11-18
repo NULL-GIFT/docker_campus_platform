@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>任务管理 - 后台</title>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <style>
+    /* === 全局变量 & 布局 === */
+    :root { --morandi-bg: #fdfcf8; }
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background-color: var(--morandi-bg); }
+
+    .admin-layout-wrapper { display: flex; min-height: 100vh; }
+    .admin-main-content { flex: 1; padding: 30px; overflow-y: auto; }
+
+    /* 卡片容器 */
+    .content-card {
+      background: white; padding: 30px; border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    /* === 表格样式优化 === */
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+
+    th {
+      text-align: left; padding: 15px;
+      color: #4a5568; font-weight: 600; font-size: 14px;
+      background: #f7fafc;
+      /* 表头线加深 */
+      border-bottom: 2px solid #cbd5e0;
+    }
+
+    td {
+      padding: 15px;
+      color: #2d3748; font-size: 14px;
+      /* 普通行线加深 */
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    /* === 胶囊状态标签 (Badge) === */
+    .badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 5px 12px;
+      border-radius: 20px; /* 胶囊圆角 */
+      font-size: 12px; font-weight: 600;
+      line-height: 1;
+    }
+
+    /* 待接单: 蓝色 */
+    .badge-wait { background: #ebf8ff; color: #3182ce; }
+
+    /* 进行中: 橙色 */
+    .badge-run { background: #feebc8; color: #d69e2e; }
+
+    /* 待验收: 紫色 */
+    .badge-check { background: #e9d8fd; color: #805ad5; }
+
+    /* 已完成: 绿色 */
+    .badge-done { background: #c6f6d5; color: #2f855a; }
+
+    /* 已删： 灰色 + 删除线 */
+    .badge-del {
+      background: #edf2f7;
+      color: #a0aec0;
+      text-decoration: line-through; /* 删除线 */
+    }
+
+    /* 按钮样式 */
+    .btn-del {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 14px;
+      /* 白底红边，更显精致 */
+      background: white;
+      border: 1px solid #fc8181;
+      color: #e53e3e;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px; font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .btn-del:hover {
+      background: #e53e3e;
+      color: white;
+      box-shadow: 0 2px 8px rgba(229, 62, 62, 0.3);
+    }
+  </style>
+</head>
+<body>
+<div class="admin-layout-wrapper">
+
+  <div th:replace="~{admin/sidebar :: sidebar('tasks')}"></div>
+
+  <div class="admin-main-content">
+    <div class="content-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h2 style="margin:0; font-size: 22px; color: #2d3748;">
+          <i class="fa fa-tasks" style="color: #667eea; margin-right: 8px;"></i>任务全库管理
+        </h2>
+        <span style="font-size: 13px; color: #718096;">仅管理员可执行强制删除</span>
+      </div>
+
+      <div class="filter-bar" style="margin-bottom: 20px;">
+        <form action="/admin/tasks" method="get">
+          <select name="status" class="form-control" style="width: 200px;" onchange="this.form.submit()">
+            <option value="" th:selected="${currentStatus == null}">📋 全部任务</option>
+            <option value="0" th:selected="${currentStatus == 0}">⏳ 待接单</option>
+            <option value="1" th:selected="${currentStatus == 1}">🏃 进行中 (含待验收)</option>
+            <option value="3" th:selected="${currentStatus == 3}">✅ 已完成</option>
+          </select>
+        </form>
+      </div>
+
+
+
+      <table>
+        <thead>
+        <tr>
+          <th style="width: 60px;">ID</th>
+          <th>任务标题</th>
+          <th style="width: 100px;">赏金</th>
+          <th style="width: 80px;">发布人ID</th>
+          <th style="width: 120px;">当前状态</th>
+          <th style="width: 120px;">操作</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="task : ${taskList}">
+          <td th:text="${task.id}" style="color: #718096;"></td>
+
+          <td th:text="${task.title}" style="font-weight: 500;"></td>
+
+          <td style="font-family: 'Segoe UI', sans-serif;">
+            <span style="color: #e53e3e; font-weight: bold;">¥ [[${task.reward}]]</span>
+          </td>
+
+          <td>
+            <i class="fa fa-user-circle-o" style="color: #cbd5e0;"></i> [[${task.publisherId}]]
+          </td>
+
+          <td>
+            <span th:if="${task.isDeleted == 1}" class="badge badge-del">已删除</span>
+
+            <span th:if="${task.isDeleted == 0}">
+                <span th:if="${task.status == 0}" class="badge badge-wait">待接单</span>
+                <span th:if="${task.status == 1}" class="badge badge-run">进行中</span>
+                <span th:if="${task.status == 2}" class="badge badge-check">待验收</span>
+                <span th:if="${task.status == 3}" class="badge badge-done">已完成</span>
+            </span>
+          </td>
+
+          <td>
+            <button th:if="${task.isDeleted == 0}"
+                    class="btn-del"
+                    th:onclick="'forceDelete(' + ${task.id} + ')'">
+              <i class="fa fa-trash-o"></i> 强制删除
+            </button>
+
+            <span th:if="${task.isDeleted == 1}" style="font-size: 12px; color: #cbd5e0;">
+               <i class="fa fa-ban"></i> 无法操作
+            </span>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  function forceDelete(id) {
+    if(!confirm("⚠️ 高风险操作警告：\n\n确定要【强制删除】该任务吗？\n删除后前台将不可见，且关联数据可能受影响。")) return;
+
+    const formData = new FormData();
+    formData.append("taskId", id);
+
+    fetch('/admin/task/delete', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(res => {
+              if(res.code === "200") {
+                // 简单的淡出效果（非必须，为了体验更好）
+                alert("操作成功：任务已标记为删除。");
+                window.location.reload();
+              }
+              else { alert("操作失败：" + res.msg); }
+            });
+  }
+</script>
+</body>
+</html>

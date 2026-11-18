@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>商品管理 - 后台</title>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <style>
+    :root { --morandi-bg: #fdfcf8; --morandi-text-main: #2d3748; }
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background-color: var(--morandi-bg); }
+    .admin-layout-wrapper { display: flex; min-height: 100vh; }
+    .admin-main-content { flex: 1; padding: 30px; overflow-y: auto; }
+    .content-card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+    .page-header { display: flex; justify-content: space-between; margin-bottom: 20px; border-bottom: 2px solid #f7fafc; padding-bottom: 15px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th { text-align: left; color: #718096; padding: 15px 10px; font-size: 14px; border-bottom: 2px solid #edf2f7; }
+    td { padding: 15px 10px; color: #2d3748; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+    .badge { padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+    .badge-ok { background: #e6fffa; color: #38b2ac; }
+    .badge-sold { background: #ebf8ff; color: #4299e1; }
+    .badge-del { background: #fff5f5; color: #e53e3e; }
+    .btn-del { background: #fff5f5; color: #e53e3e; border: 1px solid #fed7d7; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+    .btn-del:hover { background: #e53e3e; color: white; }
+  </style>
+</head>
+<body>
+<div class="admin-layout-wrapper">
+  <div th:replace="~{admin/sidebar :: sidebar('items')}"></div>
+
+  <div class="admin-main-content">
+    <div class="content-card">
+      <div class="page-header">
+        <h2><i class="fa fa-shopping-bag"></i> 商品全库管理</h2>
+      </div>
+
+      <div class="filter-bar" style="margin-bottom: 20px;">
+        <form action="/admin/items" method="get" style="display: flex; gap: 10px;">
+          <select name="statusType" class="form-control" style="width: 150px;" onchange="this.form.submit()">
+            <option value="" th:selected="${statusType == null}">全部商品</option>
+            <option value="0" th:selected="${statusType == 0}">🔵 在售中</option>
+            <option value="1" th:selected="${statusType == 1}">🟢 已售出</option>
+            <option value="2" th:selected="${statusType == 2}">🔴 已下架</option>
+          </select>
+          <input type="text" name="keyword" class="form-control"
+                 th:value="${keyword}" placeholder="搜索商品标题..." style="width: 250px;">
+          <button type="submit" class="btn-primary" style="background:#667eea; color:white; border:none; border-radius:6px; padding:0 15px;">
+            <i class="fa fa-search"></i>
+          </button>
+        </form>
+      </div>
+
+
+      <table>
+        <thead>
+        <tr>
+          <th>ID</th>
+          <th>商品名称</th>
+          <th>价格</th>
+          <th>卖家ID</th>
+          <th>状态</th>
+          <th>发布时间</th>
+          <th>操作</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="item : ${itemList}">
+          <td th:text="${item.id}"></td>
+          <td th:text="${item.title}" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></td>
+          <td th:text="'¥' + ${item.price}" style="color: #e53e3e; font-weight: bold;"></td>
+          <td th:text="${item.sellerId}"></td>
+          <td>
+            <span th:if="${item.isDeleted == 1}" class="badge badge-del">已删除</span>
+            <span th:if="${item.isDeleted == 0 and item.status == 0}" class="badge badge-ok">在售</span>
+            <span th:if="${item.isDeleted == 0 and item.status == 1}" class="badge badge-sold">已售</span>
+          </td>
+          <td th:text="${#temporals.format(item.createTime, 'yyyy-MM-dd HH:mm')}"></td>
+          <td>
+            <button th:if="${item.isDeleted == 0}"
+                    class="btn-del"
+                    th:onclick="'forceDelete(' + ${item.id} + ')'">
+              <i class="fa fa-trash"></i> 强制下架
+            </button>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  function forceDelete(id) {
+    if(!confirm("⚠️ 警告：确定要强制下架该商品吗？\n操作后前台将无法显示该商品。")) return;
+
+    // 复用你之前的 POST 接口
+    const formData = new FormData();
+    formData.append("itemId", id);
+
+    fetch('/admin/item/delete', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(res => {
+              if(res.code === "200") {
+                alert("操作成功！");
+                window.location.reload();
+              } else {
+                alert("失败：" + res.msg);
+              }
+            });
+  }
+</script>
+</body>
+</html>

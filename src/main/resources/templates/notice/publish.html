@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>发布公告 - 管理后台</title>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <style>
+    /* 表单样式 */
+    .content-card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); max-width: 800px; margin: 0 auto; }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; margin-bottom: 10px; font-weight: bold; color: #4a5568; }
+    .form-control { width: 100%; padding: 12px; border: 2px solid #edf2f7; border-radius: 8px; font-size: 16px; transition: 0.3s; box-sizing: border-box; }
+    .form-control:focus { border-color: #667eea; outline: none; }
+    .btn-submit { background: #667eea; color: white; border: none; padding: 12px 30px; border-radius: 8px; font-size: 16px; cursor: pointer; transition: 0.3s; }
+    .btn-submit:hover { background: #5a67d8; transform: translateY(-2px); }
+  </style>
+</head>
+<body>
+
+<div class="admin-layout">
+  <div th:replace="~{admin/sidebar :: sidebar('notice')}"></div>
+
+  <div class="admin-content">
+    <div class="content-card">
+      <h2 style="margin-top: 0; color: #2d3748; margin-bottom: 30px; border-bottom: 2px solid #edf2f7; padding-bottom: 15px;">
+        <i class="fa fa-edit" style="color: #667eea; margin-right: 10px;"></i>发布新公告
+      </h2>
+
+      <form id="noticeForm">
+        <div class="form-group">
+          <label>公告标题</label>
+          <input type="text" id="title" class="form-control" placeholder="请输入简明扼要的标题" required>
+        </div>
+
+        <div class="form-group">
+          <label>公告正文</label>
+          <textarea id="content" class="form-control" rows="8" placeholder="在此输入公告内容..." required></textarea>
+        </div>
+
+        <button type="button" onclick="submitNotice()" class="btn-submit">
+          <i class="fa fa-paper-plane"></i> 立即发布
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function submitNotice() {
+    const title = document.getElementById("title").value;
+    const content = document.getElementById("content").value;
+    if (!title || !content) { alert("标题和内容不能为空！"); return; }
+
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("content", content);
+
+    fetch('/admin/notice/publish', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(res => {
+              if (res.code == "200") {
+                alert("✅ 发布成功！");
+                window.location.href = "/notice/list"; // 发布完跳去列表页看效果
+              } else {
+                alert("发布失败: " + res.msg);
+              }
+            });
+  }
+</script>
+
+</body>
+</html>

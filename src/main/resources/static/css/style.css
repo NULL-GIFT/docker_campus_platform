@@ -1,0 +1,100 @@
+:root {
+    --primary-color: #4e73df;
+    --hover-color: #2e59d9;
+    --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+    /* 🔴 核心修改处：解放滚动条 */
+    min-height: 100vh;  /* 至少占满一屏，内容多自动延伸 */
+    overflow-y: auto;   /* 允许垂直滚动 */
+
+    /* 保持背景色/背景图逻辑（如果有的话） */
+    background: #f5f7fa;
+}
+
+/* ============ 核心布局：左右分屏 (登录页专用) ============ */
+/* 注意：为了防止影响内部页面，我们限制一下这个样式的生效范围
+   或者简单处理，让内部页面自己覆盖它。
+   这里保持原样即可，只要 body 能滚动，登录页也可以滚动。
+*/
+.main-wrapper {
+    display: flex;
+    width: 100%;
+    /* 🔴 修改：登录页如果很高，也允许撑开 */
+    min-height: 100vh;
+}
+
+/* 左侧：品牌海报区 */
+.left-panel {
+    flex: 1;
+    background: url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=1920&auto=format&fit=crop') no-repeat center center;
+    background-size: cover;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+}
+
+.left-panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.brand-text {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+}
+.brand-text h1 { font-size: 3rem; margin-bottom: 10px; font-weight: 700; letter-spacing: 2px; }
+.brand-text p { font-size: 1.2rem; opacity: 0.9; font-weight: 300; }
+
+/* 右侧：登录表单区 */
+.right-panel {
+    width: 450px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: -5px 0 15px rgba(0,0,0,0.05);
+    position: relative;
+    z-index: 10;
+    padding: 40px 0; /* 增加上下内边距，防止内容贴边 */
+}
+
+.form-container {
+    width: 80%;
+}
+
+/* ============ 组件美化 ============ */
+.form-title { font-size: 24px; font-weight: bold; color: #333; margin-bottom: 30px; }
+
+.input-group { margin-bottom: 20px; }
+.input-group label { display: block; color: #666; margin-bottom: 8px; font-size: 14px; }
+.input-group input {
+    width: 100%; padding: 12px 15px; border: 1px solid #e1e5ea;
+    border-radius: 8px; font-size: 14px; transition: all 0.3s;
+    background: #f8f9fa; box-sizing: border-box;
+}
+.input-group input:focus {
+    border-color: var(--primary-color); background: white; outline: none;
+    box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1);
+}
+
+.btn-primary {
+    width: 100%; padding: 14px; background: var(--primary-color);
+    color: white; border: none; border-radius: 8px; font-size: 16px;
+    font-weight: 600; cursor: pointer; transition: background 0.3s; margin-top: 10px;
+}
+.btn-primary:hover { background: var(--hover-color); }
+
+.links { margin-top: 20px; text-align: center; font-size: 14px; }
+.links a { color: var(--primary-color); text-decoration: none; }
